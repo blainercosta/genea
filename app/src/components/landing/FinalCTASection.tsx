@@ -36,7 +36,7 @@ export function FinalCTASection() {
           <Link href="/start" onClick={handleCtaClick}>
             <Button
               size="lg"
-              className="bg-white text-genea-green hover:bg-white/90 gap-2"
+              className="bg-genea-amber text-white hover:bg-genea-amber/90 gap-2"
             >
               Restaurar minha foto de graça
               <ArrowRight className="h-5 w-5" />
