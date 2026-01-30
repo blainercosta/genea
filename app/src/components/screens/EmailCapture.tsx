@@ -3,8 +3,8 @@
 import { useState } from "react";
 import { Mail } from "lucide-react";
 import { Header } from "@/components/layout";
-import { Button, Input, Card } from "@/components/ui";
-import { cn } from "@/lib/utils";
+import { Button, Input, Card, Modal } from "@/components/ui";
+import { TermsContent, PrivacyContent } from "@/components/legal";
 
 interface EmailCaptureProps {
   onSubmit?: (email: string) => void;
@@ -13,6 +13,8 @@ interface EmailCaptureProps {
 export function EmailCapture({ onSubmit }: EmailCaptureProps) {
   const [email, setEmail] = useState("");
   const [acceptedTerms, setAcceptedTerms] = useState(false);
+  const [showTerms, setShowTerms] = useState(false);
+  const [showPrivacy, setShowPrivacy] = useState(false);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -64,13 +66,21 @@ export function EmailCapture({ onSubmit }: EmailCaptureProps) {
               />
               <span className="text-sm text-ih-text-secondary">
                 Li e aceito os{" "}
-                <a href="/termos" className="text-genea-green hover:underline">
+                <button
+                  type="button"
+                  onClick={() => setShowTerms(true)}
+                  className="text-genea-green hover:underline"
+                >
                   Termos de Uso
-                </a>{" "}
+                </button>{" "}
                 e a{" "}
-                <a href="/privacidade" className="text-genea-green hover:underline">
+                <button
+                  type="button"
+                  onClick={() => setShowPrivacy(true)}
+                  className="text-genea-green hover:underline"
+                >
                   Política de Privacidade
-                </a>
+                </button>
               </span>
             </label>
 
@@ -90,6 +100,24 @@ export function EmailCapture({ onSubmit }: EmailCaptureProps) {
           </p>
         </Card>
       </main>
+
+      {/* Terms Modal */}
+      <Modal
+        isOpen={showTerms}
+        onClose={() => setShowTerms(false)}
+        title="Termos de Uso"
+      >
+        <TermsContent />
+      </Modal>
+
+      {/* Privacy Modal */}
+      <Modal
+        isOpen={showPrivacy}
+        onClose={() => setShowPrivacy(false)}
+        title="Política de Privacidade"
+      >
+        <PrivacyContent />
+      </Modal>
     </div>
   );
 }
