@@ -9,19 +9,19 @@ const testimonials = [
     quote: "Quando vi a foto pronta eu chorei. Minha mãe morreu faz 15 anos e eu consegui ver ela jovem de novo.",
     name: "Carla Mendes",
     location: "São Paulo, SP",
-    image: "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=100&h=100&fit=crop&auto=format",
+    image: "https://genea-photos.s3.sa-east-1.amazonaws.com/images/depo-01.jpeg",
   },
   {
     quote: "Achei que não ia funcionar. Testei de graça e não acreditei. Já restaurei 12 fotos da família toda.",
     name: "Roberto Silva",
     location: "Belo Horizonte, MG",
-    image: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=100&h=100&fit=crop&auto=format",
+    image: "https://genea-photos.s3.sa-east-1.amazonaws.com/images/depo-02.jpeg",
   },
   {
     quote: "Dei de presente pro meu pai no aniversário de 70 anos. Ele ficou sem falar de tanta emoção.",
     name: "Fernanda Costa",
     location: "Porto Alegre, RS",
-    image: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=100&h=100&fit=crop&auto=format",
+    image: "https://genea-photos.s3.sa-east-1.amazonaws.com/images/depo-03.jpeg",
   },
 ];
 
