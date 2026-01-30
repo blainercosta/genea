@@ -2,10 +2,13 @@
 
 import { Instagram, MessageCircle } from "lucide-react";
 
+const WHATSAPP_NUMBER = "5511992785756";
+const WHATSAPP_URL = `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent("Olá! Vim pelo site do Genea.")}`;
+
 const footerLinks = [
   { label: "Termos de uso", href: "/termos" },
   { label: "Política de privacidade", href: "/privacidade" },
-  { label: "Contato", href: "/contato" },
+  { label: "Contato", href: WHATSAPP_URL, external: true },
 ];
 
 export function Footer() {
@@ -30,9 +33,10 @@ export function Footer() {
             </h4>
             <ul className="space-y-1">
               {footerLinks.map((link) => (
-                <li key={link.href}>
+                <li key={link.label}>
                   <a
                     href={link.href}
+                    {...(link.external ? { target: "_blank", rel: "noopener noreferrer" } : {})}
                     className="inline-block py-1 text-white/70 hover:text-white transition-colors focus:outline-none focus-visible:text-white focus-visible:underline"
                   >
                     {link.label}
@@ -58,7 +62,7 @@ export function Footer() {
                 <Instagram className="h-5 w-5 text-white" />
               </a>
               <a
-                href="https://wa.me/5511999999999"
+                href={WHATSAPP_URL}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="w-11 h-11 rounded-full bg-white/10 flex items-center justify-center hover:bg-white/20 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-white/50"
@@ -68,7 +72,9 @@ export function Footer() {
               </a>
             </div>
             <a
-              href="https://wa.me/5511999999999"
+              href={WHATSAPP_URL}
+              target="_blank"
+              rel="noopener noreferrer"
               className="inline-block py-1 text-white/70 hover:text-white transition-colors text-sm focus:outline-none focus-visible:text-white focus-visible:underline"
             >
               Dúvida? Chama no WhatsApp
