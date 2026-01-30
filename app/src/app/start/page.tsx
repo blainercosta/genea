@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { EmailCapture } from "@/components/screens";
 import { useUser } from "@/hooks";
@@ -9,15 +10,14 @@ export default function StartPage() {
   const router = useRouter();
   const { initialize } = useUser();
 
+  useEffect(() => {
+    analytics.startPageView();
+  }, []);
+
   const handleSubmit = (email: string) => {
-    // Initialize user with email
     initialize(email);
-
-    // Identify user for analytics
     identify(email);
-    analytics.emailSubmit();
-
-    // Proceed to upload
+    analytics.emailSubmit(email);
     router.push("/upload");
   };
 

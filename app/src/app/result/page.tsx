@@ -72,6 +72,7 @@ function ResultContent() {
   };
 
   const handleRequestAdjustment = () => {
+    analytics.requestAdjustmentClick();
     const params = new URLSearchParams();
     if (restorationId) params.set("id", restorationId);
     if (restoration?.restoredUrl) params.set("restored", encodeURIComponent(restoration.restoredUrl));
@@ -83,6 +84,7 @@ function ResultContent() {
 
     if (navigator.share) {
       try {
+        analytics.shareClick("native");
         await navigator.share({
           title: "Minha foto restaurada no Genea",
           text: "Olha como ficou minha foto antiga depois de restaurar no Genea!",
@@ -92,13 +94,14 @@ function ResultContent() {
         // User cancelled or error
       }
     } else {
-      // Fallback: copy link to clipboard
+      analytics.shareClick("clipboard");
       navigator.clipboard.writeText(restoration.restoredUrl);
     }
   };
 
   const handleUpgrade = () => {
-    router.push("/checkout");
+    analytics.upgradeClick("result");
+    router.push("/checkout?source=result");
   };
 
   return (

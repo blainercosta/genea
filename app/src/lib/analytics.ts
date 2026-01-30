@@ -1,29 +1,22 @@
-import type { AnalyticsEvent } from "@/types";
+import posthog from "posthog-js";
+
+type EventProperties = Record<string, unknown>;
 
 /**
- * Track an analytics event
- * Uses PostHog when available, falls back to console in development
+ * Track an analytics event using PostHog
  */
-export function track(
-  event: AnalyticsEvent,
-  properties?: Record<string, unknown>
-) {
-  // Check if PostHog is available (client-side only)
-  if (typeof window !== "undefined" && (window as any).posthog) {
-    (window as any).posthog.capture(event, properties);
-  } else if (process.env.NODE_ENV === "development") {
-    console.log(`[Analytics] ${event}`, properties);
+export function track(event: string, properties?: EventProperties) {
+  if (typeof window !== "undefined") {
+    posthog.capture(event, properties);
   }
 }
 
 /**
  * Identify a user
  */
-export function identify(email: string, properties?: Record<string, unknown>) {
-  if (typeof window !== "undefined" && (window as any).posthog) {
-    (window as any).posthog.identify(email, properties);
-  } else if (process.env.NODE_ENV === "development") {
-    console.log(`[Analytics] Identify:`, email, properties);
+export function identify(email: string, properties?: EventProperties) {
+  if (typeof window !== "undefined") {
+    posthog.identify(email, properties);
   }
 }
 
@@ -31,61 +24,124 @@ export function identify(email: string, properties?: Record<string, unknown>) {
  * Reset user identification (on logout)
  */
 export function reset() {
-  if (typeof window !== "undefined" && (window as any).posthog) {
-    (window as any).posthog.reset();
+  if (typeof window !== "undefined") {
+    posthog.reset();
   }
 }
 
-// Convenience functions for common events
+/**
+ * Analytics helper with typed events for the entire funnel
+ */
 export const analytics = {
-  // Landing page
-  landingView: (properties?: { utm_source?: string; utm_medium?: string }) =>
+  // ============================================
+  // LANDING PAGE
+  // ============================================
+  landingView: (properties?: { utm_source?: string; utm_medium?: string; utm_campaign?: string }) =>
     track("landing_view", properties),
 
-  ctaClick: (position: string) => track("cta_click", { position }),
+  ctaClick: (position: "hero" | "pricing" | "final" | "mobile_sticky" | "navbar") =>
+    track("cta_click", { position }),
 
-  // Email capture
-  emailSubmit: () => track("email_submit"),
+  scrollToResults: () => track("scroll_to_results"),
 
-  // Upload flow
-  uploadStart: (method: "gallery" | "camera" | "drag") =>
-    track("upload_start", { method }),
+  faqExpand: (question: string) => track("faq_expand", { question }),
 
-  uploadComplete: (fileSize: number) =>
-    track("upload_complete", { file_size: fileSize }),
+  // ============================================
+  // EMAIL CAPTURE / START
+  // ============================================
+  startPageView: () => track("start_page_view"),
 
-  // Processing
+  emailSubmit: (email: string) => track("email_submit", { email_domain: email.split("@")[1] }),
+
+  // ============================================
+  // UPLOAD FLOW
+  // ============================================
+  uploadPageView: (isPaid: boolean) => track("upload_page_view", { is_paid: isPaid }),
+
+  uploadStart: (method: "gallery" | "camera" | "drag") => track("upload_start", { method }),
+
+  uploadComplete: (fileSize: number, fileType: string) =>
+    track("upload_complete", { file_size_kb: Math.round(fileSize / 1024), file_type: fileType }),
+
+  uploadError: (error: string) => track("upload_error", { error }),
+
+  // ============================================
+  // PROCESSING
+  // ============================================
   processingStart: () => track("processing_start"),
 
   processingComplete: (durationSeconds: number) =>
     track("processing_complete", { duration_seconds: durationSeconds }),
 
-  // Result
-  resultView: (isTrial: boolean) => track("result_view", { is_trial: isTrial }),
+  processingError: (error: string) => track("processing_error", { error }),
 
-  downloadClick: (isTrial: boolean) =>
-    track("download_click", { is_trial: isTrial }),
+  // ============================================
+  // RESULT PAGE
+  // ============================================
+  resultView: (isPaid: boolean) => track("result_view", { is_paid: isPaid }),
 
-  // Checkout
-  checkoutView: () => track("checkout_view"),
+  downloadClick: (isPaid: boolean) => track("download_click", { is_paid: isPaid }),
 
-  planSelect: (plan: string, price: number) =>
-    track("plan_select", { plan, price }),
+  shareClick: (method: "native" | "clipboard") => track("share_click", { method }),
 
-  paymentMethod: (method: "pix" | "card") =>
-    track("payment_method", { method }),
+  upgradeClick: (fromPage: string) => track("upgrade_click", { from_page: fromPage }),
 
-  paymentStart: (amount: number) => track("payment_start", { amount }),
+  requestAdjustmentClick: () => track("request_adjustment_click"),
 
-  paymentComplete: (amount: number, method: "pix" | "card") =>
-    track("payment_complete", { amount, method }),
+  // ============================================
+  // CHECKOUT / PAYMENT
+  // ============================================
+  checkoutView: (source: string) => track("checkout_view", { source }),
 
-  paymentFailed: (error: string) => track("payment_failed", { error }),
+  planSelect: (planId: string, planName: string, price: number, photos: number) =>
+    track("plan_select", { plan_id: planId, plan_name: planName, price, photos }),
 
-  // Adjustments
-  adjustmentRequest: (text: string) =>
-    track("adjustment_request", { text }),
+  paymentMethodSelect: (method: "pix" | "card") => track("payment_method_select", { method }),
 
-  // Refund
-  refundRequest: (reason: string) => track("refund_request", { reason }),
+  paymentStart: (planId: string, amount: number, method: "pix" | "card") =>
+    track("payment_start", { plan_id: planId, amount, method }),
+
+  paymentComplete: (planId: string, amount: number, method: "pix" | "card") =>
+    track("payment_complete", { plan_id: planId, amount, method }),
+
+  paymentFailed: (error: string, planId: string) =>
+    track("payment_failed", { error, plan_id: planId }),
+
+  paymentConfirmationView: (photos: number, amount: number) =>
+    track("payment_confirmation_view", { photos, amount }),
+
+  // ============================================
+  // ADJUSTMENTS
+  // ============================================
+  adjustPageView: () => track("adjust_page_view"),
+
+  adjustmentSelect: (adjustments: string[]) =>
+    track("adjustment_select", { adjustments, count: adjustments.length }),
+
+  adjustmentSubmit: (adjustments: string[], hasCustomNote: boolean) =>
+    track("adjustment_submit", { adjustments, count: adjustments.length, has_custom_note: hasCustomNote }),
+
+  adjustmentCancel: () => track("adjustment_cancel"),
+
+  adjustmentResultView: () => track("adjustment_result_view"),
+
+  adjustmentApprove: () => track("adjustment_approve"),
+
+  adjustmentReject: () => track("adjustment_reject"),
+
+  // ============================================
+  // REFUND
+  // ============================================
+  refundPageView: () => track("refund_page_view"),
+
+  refundSubmit: (reason: string) => track("refund_submit", { reason }),
+
+  refundCancel: () => track("refund_cancel"),
+
+  refundConfirmationView: () => track("refund_confirmation_view"),
+
+  // ============================================
+  // ERRORS
+  // ============================================
+  errorPageView: (errorType?: string) => track("error_page_view", { error_type: errorType }),
 };

@@ -36,15 +36,14 @@ function ProcessingContent() {
     },
     onError: (err) => {
       console.error("Restore error:", err);
+      analytics.processingError(typeof err === "string" ? err : "Unknown error");
 
-      // Update restoration record
       if (restorationId) {
         updateRestoration(restorationId, {
           status: "failed",
         });
       }
 
-      // Navigate to error page
       router.push("/error");
     },
   });

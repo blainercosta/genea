@@ -11,18 +11,25 @@ export default function UploadPage() {
   const [mounted, setMounted] = useState(false);
   const { user, isTrial, credits, consumeCredit, canRestore, createRestoration } = useUser();
 
-  // Wait for client-side hydration
-  useEffect(() => {
-    setMounted(true);
-  }, []);
-
   // Check if this is paid flow (has credits) or trial
   const isPaid = mounted ? !isTrial() : false;
   const displayCredits = mounted ? credits : 0;
 
+  // Wait for client-side hydration and track page view
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  useEffect(() => {
+    if (mounted) {
+      analytics.uploadPageView(isPaid);
+    }
+  }, [mounted, isPaid]);
+
+  const [currentFile, setCurrentFile] = useState<File | null>(null);
+
   const { upload, isUploading, error } = useUpload({
     onSuccess: (url) => {
-      // Create restoration record
       const restorationId = `r_${Date.now()}`;
       createRestoration({
         id: restorationId,
@@ -33,31 +40,25 @@ export default function UploadPage() {
         adjustments: [],
       });
 
-      // Use a credit (or trial)
       consumeCredit();
-
-      // Track analytics
-      analytics.uploadComplete(0);
-
-      // Navigate to processing with restoration ID
+      analytics.uploadComplete(currentFile?.size || 0, currentFile?.type || "unknown");
       router.push(`/processing?id=${restorationId}&url=${encodeURIComponent(url)}`);
     },
-    onError: (error) => {
-      console.error("Upload error:", error);
+    onError: (err) => {
+      analytics.uploadError(typeof err === "string" ? err : "Unknown error");
+      console.error("Upload error:", err);
     },
   });
 
   const handleUpload = async (file: File) => {
-    // Check if user can restore (has trial or credits)
     if (!canRestore()) {
+      analytics.upgradeClick("upload");
       router.push("/checkout");
       return;
     }
 
-    // Track upload start
+    setCurrentFile(file);
     analytics.uploadStart("gallery");
-
-    // Upload file
     await upload(file);
   };
 

@@ -4,10 +4,16 @@ import Link from "next/link";
 import { ArrowRight, Gift, Shield, ChevronDown, CheckCircle } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { BeforeAfterSlider } from "./BeforeAfterSlider";
+import { analytics } from "@/lib/analytics";
 
 export function HeroSection() {
   const scrollToResults = () => {
+    analytics.scrollToResults();
     document.getElementById("resultados")?.scrollIntoView({ behavior: "smooth" });
+  };
+
+  const handleCtaClick = () => {
+    analytics.ctaClick("hero");
   };
 
   return (
@@ -34,7 +40,7 @@ export function HeroSection() {
 
             {/* CTA */}
             <div className="space-y-4">
-              <Link href="/start" className="inline-block w-full sm:w-auto">
+              <Link href="/start" className="inline-block w-full sm:w-auto" onClick={handleCtaClick}>
                 <Button size="lg" className="w-full sm:w-auto gap-2">
                   Quero ver minha foto restaurada
                   <ArrowRight className="h-5 w-5" />

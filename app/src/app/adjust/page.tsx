@@ -4,6 +4,7 @@ import { useEffect, useState, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { RequestAdjustment } from "@/components/screens";
 import { useUser } from "@/hooks";
+import { analytics } from "@/lib/analytics";
 
 function AdjustContent() {
   const router = useRouter();
@@ -16,13 +17,13 @@ function AdjustContent() {
   const [restoredUrl, setRestoredUrl] = useState<string | undefined>();
 
   useEffect(() => {
-    // First try query params
+    analytics.adjustPageView();
+
     if (restoredUrlParam) {
       setRestoredUrl(decodeURIComponent(restoredUrlParam));
       return;
     }
 
-    // Try to get restoration from localStorage
     const data = restorationId
       ? getRestoration(restorationId)
       : getLatestRestoration();
@@ -33,16 +34,13 @@ function AdjustContent() {
   }, [restorationId, restoredUrlParam, getRestoration, getLatestRestoration]);
 
   const handleSubmit = (adjustments: string[], customNote: string) => {
-    // TODO: Submit adjustment request to API
+    analytics.adjustmentSubmit(adjustments, customNote.length > 0);
     console.log("Adjustments:", adjustments, customNote);
-
-    // For now, just go back to processing with the same image
-    // In production, this would send the adjustment request to the API
     router.push("/processing");
   };
 
   const handleCancel = () => {
-    // Go back to result with the restoration ID
+    analytics.adjustmentCancel();
     if (restorationId) {
       router.push(`/result?id=${restorationId}`);
     } else {

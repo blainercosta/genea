@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { Button } from "@/components/ui/Button";
 import { cn } from "@/lib/utils";
+import { analytics } from "@/lib/analytics";
 
 export function MobileStickyButton() {
   const [isVisible, setIsVisible] = useState(false);
@@ -39,7 +40,7 @@ export function MobileStickyButton() {
         shouldShow ? "translate-y-0" : "translate-y-full"
       )}
     >
-      <Link href="/start" className="block">
+      <Link href="/start" className="block" onClick={() => analytics.ctaClick("mobile_sticky")}>
         <Button size="lg" className="w-full shadow-lg">
           Testar Grátis
         </Button>

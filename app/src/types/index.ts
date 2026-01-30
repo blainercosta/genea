@@ -79,23 +79,3 @@ export interface FalRestoreResponse {
     height: number;
   };
 }
-
-// PostHog event types
-export type AnalyticsEvent =
-  | "landing_view"
-  | "cta_click"
-  | "email_submit"
-  | "upload_start"
-  | "upload_complete"
-  | "processing_start"
-  | "processing_complete"
-  | "result_view"
-  | "download_click"
-  | "checkout_view"
-  | "plan_select"
-  | "payment_method"
-  | "payment_start"
-  | "payment_complete"
-  | "payment_failed"
-  | "adjustment_request"
-  | "refund_request";

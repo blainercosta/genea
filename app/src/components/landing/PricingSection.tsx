@@ -4,6 +4,7 @@ import Link from "next/link";
 import { Check, Shield } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { cn } from "@/lib/utils";
+import { analytics } from "@/lib/analytics";
 
 const plans = [
   {
@@ -134,7 +135,7 @@ export function PricingSection() {
                 </ul>
 
                 {/* CTA */}
-                <Link href={`/checkout?plan=${plan.id}`} className="block">
+                <Link href={`/checkout?plan=${plan.id}`} className="block" onClick={() => analytics.ctaClick("pricing")}>
                   <Button
                     variant={plan.highlighted ? "secondary" : "primary"}
                     className={cn(

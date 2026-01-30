@@ -3,8 +3,12 @@
 import Link from "next/link";
 import { ArrowRight, Clock, Shield } from "lucide-react";
 import { Button } from "@/components/ui/Button";
+import { analytics } from "@/lib/analytics";
 
 export function FinalCTASection() {
+  const handleCtaClick = () => {
+    analytics.ctaClick("final");
+  };
   return (
     <section className="relative py-16 md:py-24 px-4 md:px-6 bg-ih-text overflow-hidden">
       {/* Background Image */}
@@ -29,7 +33,7 @@ export function FinalCTASection() {
         </p>
 
         <div className="flex justify-center mb-6">
-          <Link href="/start">
+          <Link href="/start" onClick={handleCtaClick}>
             <Button
               size="lg"
               className="bg-white text-genea-green hover:bg-white/90 gap-2"
