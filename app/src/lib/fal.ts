@@ -4,10 +4,29 @@ const FAL_API_KEY = process.env.FAL_KEY || "";
 const FAL_API_URL = "https://fal.run/fal-ai/nano-banana-pro/edit";
 
 /**
+ * Prompt padrão para restauração profissional de fotos
+ */
+const RESTORATION_PROMPT =
+  "professional photo restoration of vintage photograph, repair all physical damage including scratches cracks tears and stains, reconstruct missing areas seamlessly, preserve exact facial features and bone structure without AI beautification, sharp focus on facial details and eyes, authentic period-appropriate colorization with natural skin tones, film grain texture consistent with original era, archival quality output, photorealistic";
+
+/**
+ * Valida se a API key está configurada
+ */
+function validateApiKey(): void {
+  if (!FAL_API_KEY) {
+    throw new Error(
+      "FAL_KEY não configurada. Adicione FAL_KEY ao arquivo .env.local"
+    );
+  }
+}
+
+/**
  * Restore a photo using fal.ai Nano Banana Pro
  * This model edits and enhances images based on prompts
  */
 export async function restorePhoto(imageUrl: string): Promise<FalRestoreResponse> {
+  validateApiKey();
+
   const response = await fetch(FAL_API_URL, {
     method: "POST",
     headers: {
@@ -15,7 +34,7 @@ export async function restorePhoto(imageUrl: string): Promise<FalRestoreResponse
       "Content-Type": "application/json",
     },
     body: JSON.stringify({
-      prompt: "professional photo restoration of vintage photograph, repair all physical damage including scratches cracks tears and stains, reconstruct missing areas seamlessly, preserve exact facial features and bone structure without AI beautification, sharp focus on facial details and eyes, authentic period-appropriate colorization with natural skin tones, film grain texture consistent with original era, archival quality output, photorealistic",
+      prompt: RESTORATION_PROMPT,
       image_urls: [imageUrl],
       num_images: 1,
       resolution: "2K",
@@ -31,83 +50,6 @@ export async function restorePhoto(imageUrl: string): Promise<FalRestoreResponse
   const data = await response.json();
 
   // Transform response to match our FalRestoreResponse type
-  return {
-    image: {
-      url: data.images?.[0]?.url || "",
-      width: data.images?.[0]?.width || 0,
-      height: data.images?.[0]?.height || 0,
-      content_type: data.images?.[0]?.content_type || "image/png",
-    },
-  };
-}
-
-/**
- * Alternative: Use fal.ai queue for long-running tasks
- * Returns a request ID that can be polled for status
- */
-export async function restorePhotoAsync(imageUrl: string): Promise<{ request_id: string }> {
-  const response = await fetch(`${FAL_API_URL}?fal_webhook=true`, {
-    method: "POST",
-    headers: {
-      Authorization: `Key ${FAL_API_KEY}`,
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-      prompt: "professional photo restoration of vintage photograph, repair all physical damage including scratches cracks tears and stains, reconstruct missing areas seamlessly, preserve exact facial features and bone structure without AI beautification, sharp focus on facial details and eyes, authentic period-appropriate colorization with natural skin tones, film grain texture consistent with original era, archival quality output, photorealistic",
-      image_urls: [imageUrl],
-      num_images: 1,
-      resolution: "2K",
-      output_format: "png",
-    }),
-  });
-
-  if (!response.ok) {
-    const errorText = await response.text();
-    throw new Error(`fal.ai API error: ${response.status} - ${errorText}`);
-  }
-
-  return response.json();
-}
-
-/**
- * Check the status of an async restoration request
- */
-export async function checkRestoreStatus(requestId: string): Promise<{
-  status: "IN_QUEUE" | "IN_PROGRESS" | "COMPLETED" | "FAILED";
-  response?: FalRestoreResponse;
-  error?: string;
-}> {
-  const response = await fetch(`https://queue.fal.run/fal-ai/nano-banana-pro/edit/requests/${requestId}/status`, {
-    headers: {
-      Authorization: `Key ${FAL_API_KEY}`,
-    },
-  });
-
-  if (!response.ok) {
-    const errorText = await response.text();
-    throw new Error(`fal.ai status check error: ${response.status} - ${errorText}`);
-  }
-
-  return response.json();
-}
-
-/**
- * Get the result of a completed restoration
- */
-export async function getRestoreResult(requestId: string): Promise<FalRestoreResponse> {
-  const response = await fetch(`https://queue.fal.run/fal-ai/nano-banana-pro/edit/requests/${requestId}`, {
-    headers: {
-      Authorization: `Key ${FAL_API_KEY}`,
-    },
-  });
-
-  if (!response.ok) {
-    const errorText = await response.text();
-    throw new Error(`fal.ai result fetch error: ${response.status} - ${errorText}`);
-  }
-
-  const data = await response.json();
-
   return {
     image: {
       url: data.images?.[0]?.url || "",
@@ -140,6 +82,8 @@ export async function adjustPhoto(
   adjustments: string[],
   customNote?: string
 ): Promise<FalRestoreResponse> {
+  validateApiKey();
+
   // Build adjustment instructions in English
   const adjustmentInstructions = adjustments
     .map((adj) => adjustmentPromptMap[adj])

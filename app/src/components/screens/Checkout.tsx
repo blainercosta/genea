@@ -4,62 +4,13 @@ import { Check, Shield } from "lucide-react";
 import { Header } from "@/components/layout";
 import { Button } from "@/components/ui";
 import { cn } from "@/lib/utils";
-
-interface PricingPlan {
-  id: string;
-  name: string;
-  photos: number;
-  price: number;
-  unitPrice: string | null;
-  benefits: string[];
-  popular?: boolean;
-}
+import { PLANS, formatPrice } from "@/config/plans";
 
 interface CheckoutProps {
   selectedPlanId?: string;
   onSelectPlan?: (planId: string) => void;
   onContinue?: (planId: string) => void;
 }
-
-const plans: PricingPlan[] = [
-  {
-    id: "1",
-    name: "UMA MEMÓRIA",
-    photos: 1,
-    price: 9.9,
-    unitPrice: null,
-    benefits: [
-      "Restauração completa",
-      "Ajustes até você gostar",
-      "Download em alta qualidade",
-    ],
-  },
-  {
-    id: "2",
-    name: "ÁLBUM",
-    photos: 5,
-    price: 29.9,
-    unitPrice: "R$ 5,98 cada",
-    benefits: [
-      "Tudo da opção anterior",
-      "Fila mais rápida",
-      "Suporte por WhatsApp",
-    ],
-    popular: true,
-  },
-  {
-    id: "3",
-    name: "ACERVO",
-    photos: 15,
-    price: 59.9,
-    unitPrice: "R$ 3,99 cada",
-    benefits: [
-      "Tudo da opção anterior",
-      "Atendimento dedicado",
-      "Ajuda pra organizar suas fotos",
-    ],
-  },
-];
 
 export function Checkout({
   selectedPlanId,
@@ -88,7 +39,7 @@ export function Checkout({
 
         {/* Pricing cards */}
         <div className="grid gap-4 md:grid-cols-3 md:gap-6 w-full max-w-4xl">
-          {plans.map((plan) => (
+          {PLANS.map((plan) => (
             <div
               key={plan.id}
               className={cn(
@@ -124,7 +75,7 @@ export function Checkout({
                     "text-3xl font-bold",
                     plan.popular ? "text-white" : "text-ih-text"
                   )}>
-                    R$ {plan.price.toFixed(2).replace(".", ",")}
+                    {formatPrice(plan.price)}
                   </p>
                   {plan.unitPrice && (
                     <p className={cn(
