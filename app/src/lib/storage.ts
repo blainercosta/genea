@@ -157,6 +157,25 @@ export function getLatestRestoration(): Restoration | null {
 }
 
 /**
+ * Update customer info (name, phone, CPF)
+ */
+export function updateCustomerInfo(info: {
+  name?: string;
+  phone?: string;
+  taxId?: string;
+}): User | null {
+  const user = getUser();
+  if (!user) return null;
+
+  if (info.name) user.name = info.name;
+  if (info.phone) user.phone = info.phone;
+  if (info.taxId) user.taxId = info.taxId;
+
+  saveUser(user);
+  return user;
+}
+
+/**
  * Clear all user data (for testing)
  */
 export function clearUserData(): void {

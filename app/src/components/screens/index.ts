@@ -1,8 +1,10 @@
 export { EmailCapture } from "./EmailCapture";
+export { CustomerInfo } from "./CustomerInfo";
 export { PhotoUpload } from "./PhotoUpload";
 export { Processing } from "./Processing";
 export { Result } from "./Result";
 export { Checkout } from "./Checkout";
+export { PixPayment } from "./PixPayment";
 export { PaymentConfirmation } from "./PaymentConfirmation";
 export { RequestAdjustment } from "./RequestAdjustment";
 export { AdjustmentResult } from "./AdjustmentResult";

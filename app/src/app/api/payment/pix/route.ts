@@ -1,26 +1,57 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getPlanById } from "@/config/plans";
+import {
+  generatePix,
+  getPixStatus,
+  isAbacateConfigured,
+} from "@/lib/abacate";
 
 /**
  * POST /api/payment/pix
  * Gera um código PIX para pagamento via Abacate Pay
  *
- * TODO: Integrar com Abacate Pay API
- * - Documentação: https://docs.abacatepay.com/
- * - Configurar ABACATE_API_KEY no .env.local
- * - Gerar QR Code e código copia/cola
+ * Request body:
+ * - planId: ID do plano (1, 2, ou 3)
+ * - email: Email do cliente
+ * - name: Nome completo do cliente
+ * - phone: Telefone do cliente
+ * - taxId: CPF do cliente
+ *
+ * Response:
+ * - pix: Dados do PIX (id, qrCode, copyPaste, expiresAt)
+ * - plan: Dados do plano selecionado
  */
 export async function POST(request: NextRequest) {
   try {
-    const { planId, email } = await request.json();
-
-    if (!planId || !email) {
+    // Verifica se a integração está configurada
+    if (!isAbacateConfigured()) {
       return NextResponse.json(
-        { error: "planId e email são obrigatórios" },
+        {
+          error: "Pagamento via PIX temporariamente indisponível",
+          message: "ABACATE_API_KEY não configurada",
+        },
+        { status: 503 }
+      );
+    }
+
+    const body = await request.json();
+    const { planId, email, name, phone, taxId } = body;
+
+    // Validação dos campos obrigatórios
+    if (!planId || !email || !name || !phone || !taxId) {
+      return NextResponse.json(
+        { error: "Todos os campos são obrigatórios (planId, email, name, phone, taxId)" },
         { status: 400 }
       );
     }
 
+    // Validação básica de email
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      return NextResponse.json({ error: "Email inválido" }, { status: 400 });
+    }
+
+    // Busca o plano
     const plan = getPlanById(planId);
     if (!plan) {
       return NextResponse.json(
@@ -29,33 +60,79 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // TODO: Implementar integração com Abacate Pay
-    // const response = await fetch("https://api.abacatepay.com/v1/billing/pix", {
-    //   method: "POST",
-    //   headers: {
-    //     "Authorization": `Bearer ${process.env.ABACATE_API_KEY}`,
-    //     "Content-Type": "application/json",
-    //   },
-    //   body: JSON.stringify({
-    //     amount: plan.price,
-    //     description: `Genea - ${plan.name}`,
-    //     customer: { email },
-    //     metadata: { planId, photos: plan.photos },
-    //   }),
-    // });
-
-    return NextResponse.json(
+    // Gera o PIX via Abacate Pay com os dados reais do cliente
+    const pixData = await generatePix(
+      plan.price,
+      `Genea - ${plan.name} (${plan.photos} ${plan.photos === 1 ? "foto" : "fotos"})`,
+      { email, name, cellphone: phone, taxId },
       {
-        error: "Integração com Abacate Pay não implementada",
-        message: "Configure ABACATE_API_KEY e implemente o PIX",
-        plan,
-      },
-      { status: 501 }
+        planId: plan.id,
+        photos: plan.photos.toString(),
+        email,
+      }
     );
+
+    return NextResponse.json({
+      pix: pixData,
+      plan: {
+        id: plan.id,
+        name: plan.name,
+        photos: plan.photos,
+        price: plan.price,
+      },
+    });
   } catch (error) {
     console.error("Erro ao gerar PIX:", error);
+
+    const message =
+      error instanceof Error ? error.message : "Erro desconhecido";
+
     return NextResponse.json(
-      { error: "Erro ao gerar código PIX" },
+      { error: "Erro ao gerar código PIX", details: message },
+      { status: 500 }
+    );
+  }
+}
+
+/**
+ * GET /api/payment/pix?id=xxx
+ * Consulta o status de um pagamento PIX
+ *
+ * Query params:
+ * - id: ID do PIX gerado
+ *
+ * Response:
+ * - id: ID do PIX
+ * - status: PENDING | COMPLETED | EXPIRED | REFUNDED
+ * - amount: Valor em reais
+ */
+export async function GET(request: NextRequest) {
+  try {
+    if (!isAbacateConfigured()) {
+      return NextResponse.json(
+        { error: "Serviço temporariamente indisponível" },
+        { status: 503 }
+      );
+    }
+
+    const { searchParams } = new URL(request.url);
+    const pixId = searchParams.get("id");
+
+    if (!pixId) {
+      return NextResponse.json(
+        { error: "ID do PIX é obrigatório" },
+        { status: 400 }
+      );
+    }
+
+    const status = await getPixStatus(pixId);
+
+    return NextResponse.json(status);
+  } catch (error) {
+    console.error("Erro ao consultar PIX:", error);
+
+    return NextResponse.json(
+      { error: "Erro ao consultar status do PIX" },
       { status: 500 }
     );
   }

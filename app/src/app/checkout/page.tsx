@@ -5,15 +5,14 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { Checkout } from "@/components/screens";
 import { analytics } from "@/lib/analytics";
 import { Suspense } from "react";
-import { PLANS_MAP, getPlanById } from "@/config/plans";
-import { useUser } from "@/hooks";
+import { PLANS_MAP } from "@/config/plans";
+import { getUser } from "@/lib/storage";
 
 function CheckoutContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const initialPlan = searchParams.get("plan") || "2";
   const [selectedPlanId, setSelectedPlanId] = useState<string>(initialPlan);
-  const { addCredits } = useUser();
 
   useEffect(() => {
     const source = searchParams.get("source") || "direct";
@@ -31,22 +30,27 @@ function CheckoutContent() {
   const handleContinue = (planId: string) => {
     const plan = PLANS_MAP[planId];
     if (plan) {
-      analytics.paymentStart(planId, plan.price, "pix");
-      // TODO: Integrar com Stripe/Abacate Pay
-      // Por enquanto, simula pagamento bem-sucedido
-      analytics.paymentComplete(planId, plan.price, "pix");
-      addCredits(plan.photos);
+      analytics.planSelect(planId, plan.name, plan.price, plan.photos);
 
-      // Passa dados reais para página de confirmação
-      const params = new URLSearchParams({
-        photos: plan.photos.toString(),
-        amount: plan.price.toString(),
-        plan: plan.name,
-      });
-      router.push(`/payment-confirmed?${params.toString()}`);
+      const user = getUser();
+
+      // If no email, go to start page first
+      if (!user?.email) {
+        router.push(`/start?plan=${planId}`);
+        return;
+      }
+
+      // If no customer info, go to customer-info page
+      if (!user.name || !user.phone || !user.taxId) {
+        router.push(`/customer-info?plan=${planId}`);
+        return;
+      }
+
+      // All data present, go directly to PIX
+      router.push(`/pix?plan=${planId}`);
       return;
     }
-    router.push("/payment-confirmed");
+    router.push("/start?plan=2");
   };
 
   return (

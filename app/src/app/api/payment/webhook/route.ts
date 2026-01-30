@@ -1,57 +1,47 @@
 import { NextRequest, NextResponse } from "next/server";
+import {
+  validateWebhookSignature,
+  parseWebhookEvent,
+  type AbacateWebhookEvent,
+} from "@/lib/abacate";
+import { getPlanById } from "@/config/plans";
 
 /**
  * POST /api/payment/webhook
- * Recebe webhooks de pagamento (Stripe e Abacate Pay)
+ * Recebe webhooks de pagamento do Abacate Pay
  *
- * TODO: Implementar validação de assinatura e processamento
- * - Validar webhook signature (STRIPE_WEBHOOK_SECRET / ABACATE_WEBHOOK_SECRET)
- * - Processar eventos de pagamento confirmado
- * - Atualizar créditos do usuário
- * - Enviar email de confirmação
+ * Eventos processados:
+ * - BILLING_PAID: Pagamento confirmado
+ * - BILLING_EXPIRED: PIX expirou
+ * - BILLING_REFUNDED: Reembolso processado
+ *
+ * Para configurar o webhook no Abacate Pay:
+ * 1. Acesse o dashboard do Abacate Pay
+ * 2. Configure a URL: https://seu-dominio.com/api/payment/webhook
+ * 3. Copie o webhook secret e configure ABACATE_WEBHOOK_SECRET no .env
  */
 export async function POST(request: NextRequest) {
   try {
     const body = await request.text();
-    const signature = request.headers.get("stripe-signature") ||
-                      request.headers.get("x-abacate-signature");
 
     // Identifica origem do webhook
-    const isStripe = request.headers.get("stripe-signature") !== null;
-    const isAbacate = request.headers.get("x-abacate-signature") !== null;
+    const abacateSignature = request.headers.get("x-abacate-signature");
+    const stripeSignature = request.headers.get("stripe-signature");
 
-    if (!signature) {
-      return NextResponse.json(
-        { error: "Assinatura de webhook ausente" },
-        { status: 401 }
-      );
+    // Webhook do Abacate Pay
+    if (abacateSignature || (!stripeSignature && body)) {
+      return handleAbacateWebhook(body, abacateSignature);
     }
 
-    // TODO: Validar assinatura
-    // if (isStripe) {
-    //   const stripe = require("stripe")(process.env.STRIPE_SECRET_KEY);
-    //   const event = stripe.webhooks.constructEvent(
-    //     body,
-    //     signature,
-    //     process.env.STRIPE_WEBHOOK_SECRET
-    //   );
-    //   // Processar evento
-    // }
-
-    // TODO: Processar eventos
-    // - checkout.session.completed (Stripe)
-    // - payment.confirmed (Abacate Pay)
-    // - Atualizar créditos do usuário
-    // - Enviar email de confirmação via Resend
-
-    console.log("Webhook recebido:", { isStripe, isAbacate });
+    // Webhook do Stripe (TODO: implementar quando integrar Stripe)
+    if (stripeSignature) {
+      console.log("Webhook Stripe recebido - integração pendente");
+      return NextResponse.json({ received: true, provider: "stripe" });
+    }
 
     return NextResponse.json(
-      {
-        received: true,
-        message: "Webhook processado (integração pendente)",
-      },
-      { status: 200 }
+      { error: "Webhook não reconhecido" },
+      { status: 400 }
     );
   } catch (error) {
     console.error("Erro no webhook:", error);
@@ -60,4 +50,105 @@ export async function POST(request: NextRequest) {
       { status: 500 }
     );
   }
+}
+
+/**
+ * Processa webhook do Abacate Pay
+ */
+async function handleAbacateWebhook(
+  body: string,
+  signature: string | null
+): Promise<NextResponse> {
+  // Valida assinatura se configurada
+  if (signature && !validateWebhookSignature(body, signature)) {
+    console.error("Assinatura de webhook inválida");
+    return NextResponse.json(
+      { error: "Assinatura inválida" },
+      { status: 401 }
+    );
+  }
+
+  // Parse do evento
+  let event: AbacateWebhookEvent;
+  try {
+    event = parseWebhookEvent(body);
+  } catch {
+    console.error("Payload de webhook inválido:", body);
+    return NextResponse.json(
+      { error: "Payload inválido" },
+      { status: 400 }
+    );
+  }
+
+  console.log("Webhook Abacate Pay recebido:", {
+    event: event.event,
+    id: event.data.id,
+    status: event.data.status,
+  });
+
+  // Processa baseado no tipo de evento
+  switch (event.event) {
+    case "BILLING_PAID":
+      await handlePaymentConfirmed(event);
+      break;
+
+    case "BILLING_EXPIRED":
+      console.log("PIX expirado:", event.data.id);
+      break;
+
+    case "BILLING_REFUNDED":
+      console.log("Reembolso processado:", event.data.id);
+      break;
+
+    default:
+      console.log("Evento desconhecido:", event.event);
+  }
+
+  return NextResponse.json({ received: true, event: event.event });
+}
+
+/**
+ * Processa pagamento confirmado
+ *
+ * NOTA: Como não há banco de dados, os créditos são gerenciados
+ * via localStorage no cliente. O webhook serve para:
+ * 1. Logging/auditoria
+ * 2. Envio de email de confirmação (quando Resend estiver integrado)
+ * 3. Possível integração futura com banco de dados
+ */
+async function handlePaymentConfirmed(event: AbacateWebhookEvent) {
+  const { metadata } = event.data;
+
+  const planId = metadata?.planId;
+  const email = metadata?.email;
+  const photos = metadata?.photos;
+
+  console.log("Pagamento confirmado:", {
+    pixId: event.data.id,
+    amount: event.data.amount / 100, // centavos -> reais
+    planId,
+    email,
+    photos,
+  });
+
+  // Busca dados do plano para log
+  if (planId) {
+    const plan = getPlanById(planId);
+    if (plan) {
+      console.log("Plano adquirido:", {
+        name: plan.name,
+        photos: plan.photos,
+        price: plan.price,
+      });
+    }
+  }
+
+  // TODO: Enviar email de confirmação via Resend
+  // if (email) {
+  //   await sendEmail({
+  //     to: email,
+  //     template: "payment_confirmed",
+  //     data: { photos, amount: event.data.amount / 100 },
+  //   });
+  // }
 }

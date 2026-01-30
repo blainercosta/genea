@@ -63,8 +63,11 @@ async function createWatermarkPattern(
   return pattern;
 }
 
+const MAX_DIMENSION = 1024;
+
 /**
  * Adds a watermark pattern to an image
+ * Resizes to max 1K to save costs
  * Accepts Uint8Array or Buffer for compatibility
  * Returns Uint8Array for web API compatibility
  */
@@ -73,14 +76,28 @@ export async function addWatermark(
 ): Promise<Uint8Array> {
   // Get image metadata
   const metadata = await sharp(imageData).metadata();
-  const width = metadata.width || 1024;
-  const height = metadata.height || 1024;
+  const originalWidth = metadata.width || MAX_DIMENSION;
+  const originalHeight = metadata.height || MAX_DIMENSION;
+
+  // Calculate resize dimensions (max 1K, maintain aspect ratio)
+  let width = originalWidth;
+  let height = originalHeight;
+  if (width > MAX_DIMENSION || height > MAX_DIMENSION) {
+    if (width > height) {
+      height = Math.round((height / width) * MAX_DIMENSION);
+      width = MAX_DIMENSION;
+    } else {
+      width = Math.round((width / height) * MAX_DIMENSION);
+      height = MAX_DIMENSION;
+    }
+  }
 
   // Create watermark pattern
   const watermarkPattern = await createWatermarkPattern(width, height);
 
-  // Composite watermark onto image
+  // Resize image (if needed) and composite watermark
   const watermarkedBuffer = await sharp(imageData)
+    .resize(width, height, { fit: "inside", withoutEnlargement: true })
     .composite([
       {
         input: watermarkPattern,

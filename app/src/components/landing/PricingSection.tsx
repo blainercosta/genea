@@ -135,7 +135,7 @@ export function PricingSection() {
                 </ul>
 
                 {/* CTA */}
-                <Link href={`/checkout?plan=${plan.id}`} className="block" onClick={() => analytics.ctaClick("pricing")}>
+                <Link href={`/start?plan=${plan.id}`} className="block" onClick={() => analytics.ctaClick("pricing")}>
                   <Button
                     variant={plan.highlighted ? "secondary" : "primary"}
                     className={cn(

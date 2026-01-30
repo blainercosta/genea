@@ -1,6 +1,9 @@
 // User state stored in localStorage
 export interface User {
   email: string;
+  name?: string;
+  phone?: string;
+  taxId?: string; // CPF
   credits: number;
   isTrialUsed: boolean;
   restorations: Restoration[];

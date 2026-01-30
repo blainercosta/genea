@@ -1,75 +1,148 @@
 import { NextRequest, NextResponse } from "next/server";
+import {
+  isResendConfigured,
+  sendWelcomeEmail,
+  sendRestorationCompleteEmail,
+  sendPaymentConfirmedEmail,
+  sendRefundProcessedEmail,
+} from "@/lib/resend";
 
 /**
  * POST /api/email
- * Envia emails transacionais via Resend
+ * Send transactional emails via Resend
  *
- * TODO: Integrar com Resend API
- * - npm install resend
- * - Configurar RESEND_API_KEY no .env.local
- * - Criar templates de email
+ * Request body:
+ * - to: Email recipient
+ * - type: Email template type
+ * - data: Template-specific data
  */
 
-interface EmailRequest {
+interface WelcomeRequest {
   to: string;
-  type: "welcome" | "restoration_complete" | "payment_confirmed" | "refund_processed";
-  data?: Record<string, unknown>;
+  type: "welcome";
+  data?: { name?: string };
 }
+
+interface RestorationCompleteRequest {
+  to: string;
+  type: "restoration_complete";
+  data: { restorationUrl: string; name?: string };
+}
+
+interface PaymentConfirmedRequest {
+  to: string;
+  type: "payment_confirmed";
+  data: { planName: string; credits: number; amount: number; name?: string };
+}
+
+interface RefundProcessedRequest {
+  to: string;
+  type: "refund_processed";
+  data: { amount: number; name?: string };
+}
+
+type EmailRequest =
+  | WelcomeRequest
+  | RestorationCompleteRequest
+  | PaymentConfirmedRequest
+  | RefundProcessedRequest;
 
 export async function POST(request: NextRequest) {
   try {
-    const { to, type, data } = (await request.json()) as EmailRequest;
+    if (!isResendConfigured()) {
+      return NextResponse.json(
+        { error: "Email service not configured" },
+        { status: 503 }
+      );
+    }
+
+    const body = (await request.json()) as EmailRequest;
+    const { to, type, data } = body;
 
     if (!to || !type) {
       return NextResponse.json(
-        { error: "to e type são obrigatórios" },
+        { error: "to and type are required" },
         { status: 400 }
       );
     }
 
-    // TODO: Implementar integração com Resend
-    // const { Resend } = require("resend");
-    // const resend = new Resend(process.env.RESEND_API_KEY);
-    //
-    // const templates = {
-    //   welcome: {
-    //     subject: "Bem-vindo ao Genea!",
-    //     html: `<h1>Olá!</h1><p>Sua primeira restauração está pronta...</p>`,
-    //   },
-    //   restoration_complete: {
-    //     subject: "Sua foto foi restaurada!",
-    //     html: `<h1>Ficou linda!</h1><p>Acesse para ver o resultado...</p>`,
-    //   },
-    //   payment_confirmed: {
-    //     subject: "Pagamento confirmado - Genea",
-    //     html: `<h1>Obrigado!</h1><p>Você agora tem ${data?.credits} créditos...</p>`,
-    //   },
-    //   refund_processed: {
-    //     subject: "Reembolso processado - Genea",
-    //     html: `<h1>Reembolso enviado</h1><p>O valor será creditado em até 24h...</p>`,
-    //   },
-    // };
-    //
-    // await resend.emails.send({
-    //   from: "Genea <noreply@genea.com.br>",
-    //   to,
-    //   subject: templates[type].subject,
-    //   html: templates[type].html,
-    // });
+    // Validate email format
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(to)) {
+      return NextResponse.json({ error: "Invalid email" }, { status: 400 });
+    }
 
-    return NextResponse.json(
-      {
-        error: "Integração com Resend não implementada",
-        message: "Configure RESEND_API_KEY e implemente os templates",
-        type,
-        to,
-      },
-      { status: 501 }
-    );
+    let result;
+
+    switch (type) {
+      case "welcome":
+        result = await sendWelcomeEmail(to, data?.name);
+        break;
+
+      case "restoration_complete":
+        if (!data?.restorationUrl) {
+          return NextResponse.json(
+            { error: "restorationUrl is required for restoration_complete" },
+            { status: 400 }
+          );
+        }
+        result = await sendRestorationCompleteEmail(
+          to,
+          data.restorationUrl,
+          data.name
+        );
+        break;
+
+      case "payment_confirmed":
+        if (!data?.planName || data?.credits === undefined || data?.amount === undefined) {
+          return NextResponse.json(
+            { error: "planName, credits, and amount are required for payment_confirmed" },
+            { status: 400 }
+          );
+        }
+        result = await sendPaymentConfirmedEmail(
+          to,
+          data.planName,
+          data.credits,
+          data.amount,
+          data.name
+        );
+        break;
+
+      case "refund_processed":
+        if (data?.amount === undefined) {
+          return NextResponse.json(
+            { error: "amount is required for refund_processed" },
+            { status: 400 }
+          );
+        }
+        result = await sendRefundProcessedEmail(to, data.amount, data.name);
+        break;
+
+      default:
+        return NextResponse.json(
+          { error: "Invalid email type" },
+          { status: 400 }
+        );
+    }
+
+    if (!result.success) {
+      return NextResponse.json(
+        { error: result.error || "Failed to send email" },
+        { status: 500 }
+      );
+    }
+
+    return NextResponse.json({
+      success: true,
+      id: result.id,
+      type,
+      to,
+    });
   } catch (error) {
-    console.error("Erro ao enviar email:", error);
+    console.error("Error sending email:", error);
     return NextResponse.json(
-      { error: "Erro ao enviar email" },
+      { error: "Failed to send email" },
       { status: 500 }
     );
   }
