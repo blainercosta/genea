@@ -15,7 +15,7 @@ export async function restorePhoto(imageUrl: string): Promise<FalRestoreResponse
       "Content-Type": "application/json",
     },
     body: JSON.stringify({
-      prompt: "restore this old photo, enhance details, fix damage, remove scratches and stains, improve clarity, preserve original faces and features, natural realistic colors",
+      prompt: "professional photo restoration of vintage photograph, repair all physical damage including scratches cracks tears and stains, reconstruct missing areas seamlessly, preserve exact facial features and bone structure without AI beautification, sharp focus on facial details and eyes, authentic period-appropriate colorization with natural skin tones, film grain texture consistent with original era, archival quality output, photorealistic",
       image_urls: [imageUrl],
       num_images: 1,
       resolution: "2K",
@@ -53,7 +53,7 @@ export async function restorePhotoAsync(imageUrl: string): Promise<{ request_id:
       "Content-Type": "application/json",
     },
     body: JSON.stringify({
-      prompt: "restore this old photo, enhance details, fix damage, remove scratches and stains, improve clarity, preserve original faces and features, natural realistic colors",
+      prompt: "professional photo restoration of vintage photograph, repair all physical damage including scratches cracks tears and stains, reconstruct missing areas seamlessly, preserve exact facial features and bone structure without AI beautification, sharp focus on facial details and eyes, authentic period-appropriate colorization with natural skin tones, film grain texture consistent with original era, archival quality output, photorealistic",
       image_urls: [imageUrl],
       num_images: 1,
       resolution: "2K",

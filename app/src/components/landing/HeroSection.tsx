@@ -74,11 +74,10 @@ export function HeroSection() {
           {/* Image Column */}
           <div className="lg:pl-8">
             <BeforeAfterSlider
-              beforeImage="https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=600&h=450&fit=crop&auto=format&sepia=40&contrast=80"
-              afterImage="https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=600&h=450&fit=crop&auto=format"
+              beforeImage="https://genea-photos.s3.sa-east-1.amazonaws.com/landing/hero-old.png"
+              afterImage="https://genea-photos.s3.sa-east-1.amazonaws.com/landing/hero-new.png"
               beforeAlt="Foto antiga danificada"
               afterAlt="Foto restaurada"
-              caption="Casamento de João e Maria, 1952"
             />
           </div>
         </div>

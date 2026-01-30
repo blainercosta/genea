@@ -12,8 +12,8 @@ export function FounderSection() {
             <div className="relative">
               <div className="w-40 h-40 md:w-48 md:h-48 rounded-full overflow-hidden bg-ih-surface shadow-card">
                 <img
-                  src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=200&h=200&fit=crop&auto=format"
-                  alt="Fundador do Genea"
+                  src="https://genea-photos.s3.sa-east-1.amazonaws.com/landing/profile-blainer.png"
+                  alt="Blainer Costa, Fundador do Genea"
                   className="w-full h-full object-cover"
                 />
               </div>

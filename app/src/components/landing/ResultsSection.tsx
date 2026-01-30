@@ -2,24 +2,26 @@
 
 import { BeforeAfterSlider } from "./BeforeAfterSlider";
 
+const S3_BASE = "https://genea-photos.s3.sa-east-1.amazonaws.com/landing";
+
 const results = [
   {
-    tag: "Foto de casamento",
-    story: "João achou essa foto no fundo de uma gaveta. Era do casamento dos avós em 1952. Tava rasgada no meio. Olha como ficou.",
-    beforeImage: "https://images.unsplash.com/photo-1519741497674-611481863552?w=400&h=300&fit=crop&auto=format&sepia=50",
-    afterImage: "https://images.unsplash.com/photo-1519741497674-611481863552?w=400&h=300&fit=crop&auto=format",
+    tag: "Foto de família",
+    story: "João achou essa foto no fundo de uma gaveta. Tava toda amarelada e com manchas. Olha como ficou.",
+    beforeImage: `${S3_BASE}/result-01-old.png`,
+    afterImage: `${S3_BASE}/result-01-new.png`,
   },
   {
     tag: "Foto de infância",
     story: "Dona Maria guardou essa foto por 40 anos. Era a única do filho pequeno. Tava toda manchada de mofo. Recuperamos tudo.",
-    beforeImage: "https://images.unsplash.com/photo-1503454537195-1dcabb73ffb9?w=400&h=300&fit=crop&auto=format&sepia=50",
-    afterImage: "https://images.unsplash.com/photo-1503454537195-1dcabb73ffb9?w=400&h=300&fit=crop&auto=format",
+    beforeImage: `${S3_BASE}/result-02-old.png`,
+    afterImage: `${S3_BASE}/result-02-new.png`,
   },
   {
-    tag: "Foto de família",
+    tag: "Foto de casamento",
     story: "Essa foto pegou chuva numa enchente. A família achou que tinha perdido pra sempre. Conseguimos trazer de volta.",
-    beforeImage: "https://images.unsplash.com/photo-1511895426328-dc8714191300?w=400&h=300&fit=crop&auto=format&sepia=50",
-    afterImage: "https://images.unsplash.com/photo-1511895426328-dc8714191300?w=400&h=300&fit=crop&auto=format",
+    beforeImage: `${S3_BASE}/result-03-old.png`,
+    afterImage: `${S3_BASE}/result-03-new.png`,
   },
 ];
 
