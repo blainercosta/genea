@@ -31,8 +31,8 @@ export function EmailCapture({ onSubmit }: EmailCaptureProps) {
       <main className="flex-1 flex items-center justify-center p-6">
         <Card className="w-full max-w-md p-8 md:p-10 flex flex-col items-center gap-8 shadow-card rounded-[20px]">
           {/* Icon */}
-          <div className="w-16 h-16 md:w-20 md:h-20 rounded-2xl bg-genea-amber/10 flex items-center justify-center">
-            <Mail className="w-10 h-10 md:w-12 md:h-12 text-genea-amber" />
+          <div className="w-14 h-14 md:w-16 md:h-16 rounded-2xl bg-genea-amber/10 flex items-center justify-center">
+            <Mail className="w-7 h-7 md:w-8 md:h-8 text-genea-amber" />
           </div>
 
           {/* Text */}

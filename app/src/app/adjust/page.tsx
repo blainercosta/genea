@@ -35,8 +35,25 @@ function AdjustContent() {
 
   const handleSubmit = (adjustments: string[], customNote: string) => {
     analytics.adjustmentSubmit(adjustments, customNote.length > 0);
-    console.log("Adjustments:", adjustments, customNote);
-    router.push("/processing");
+
+    if (!restoredUrl) {
+      console.error("No restored URL to adjust");
+      return;
+    }
+
+    // Build URL params for processing page
+    const params = new URLSearchParams();
+    params.set("mode", "adjust");
+    params.set("url", encodeURIComponent(restoredUrl));
+    params.set("adjustments", JSON.stringify(adjustments));
+    if (customNote) {
+      params.set("note", encodeURIComponent(customNote));
+    }
+    if (restorationId) {
+      params.set("id", restorationId);
+    }
+
+    router.push(`/processing?${params.toString()}`);
   };
 
   const handleCancel = () => {

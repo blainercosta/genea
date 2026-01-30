@@ -117,3 +117,77 @@ export async function getRestoreResult(requestId: string): Promise<FalRestoreRes
     },
   };
 }
+
+/**
+ * Map Portuguese adjustment options to English prompts
+ */
+const adjustmentPromptMap: Record<string, string> = {
+  "Clarear mais": "brighten the image more",
+  "Escurecer": "darken the image",
+  "Mais contraste": "increase contrast",
+  "Menos ruído": "reduce noise and grain",
+  "Mais nitidez": "enhance sharpness and details",
+  "Corrigir cores": "fix color balance and make colors more natural",
+  "Remover manchas": "remove stains and blemishes",
+  "Outro": "", // Custom note will be used
+};
+
+/**
+ * Adjust a previously restored photo with specific modifications
+ */
+export async function adjustPhoto(
+  imageUrl: string,
+  adjustments: string[],
+  customNote?: string
+): Promise<FalRestoreResponse> {
+  // Build adjustment instructions in English
+  const adjustmentInstructions = adjustments
+    .map((adj) => adjustmentPromptMap[adj])
+    .filter(Boolean)
+    .join(", ");
+
+  // Build the complete prompt
+  let prompt = "adjust this restored photo: ";
+
+  if (adjustmentInstructions) {
+    prompt += adjustmentInstructions;
+  }
+
+  if (customNote) {
+    prompt += adjustmentInstructions ? `. Also: ${customNote}` : customNote;
+  }
+
+  // Add preservation instructions
+  prompt += ". Preserve faces, features, and overall composition. Keep the restoration quality.";
+
+  const response = await fetch(FAL_API_URL, {
+    method: "POST",
+    headers: {
+      Authorization: `Key ${FAL_API_KEY}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      prompt,
+      image_urls: [imageUrl],
+      num_images: 1,
+      resolution: "2K",
+      output_format: "png",
+    }),
+  });
+
+  if (!response.ok) {
+    const errorText = await response.text();
+    throw new Error(`fal.ai API error: ${response.status} - ${errorText}`);
+  }
+
+  const data = await response.json();
+
+  return {
+    image: {
+      url: data.images?.[0]?.url || "",
+      width: data.images?.[0]?.width || 0,
+      height: data.images?.[0]?.height || 0,
+      content_type: data.images?.[0]?.content_type || "image/png",
+    },
+  };
+}
