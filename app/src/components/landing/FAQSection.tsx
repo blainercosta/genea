@@ -1,6 +1,8 @@
 "use client";
 
 import { HelpCircle } from "lucide-react";
+import { useScrollAnimation } from "@/hooks";
+import { cn } from "@/lib/utils";
 
 const faqs = [
   {
@@ -22,20 +24,33 @@ const faqs = [
 ];
 
 export function FAQSection() {
+  const { ref: titleRef, isVisible: titleVisible } = useScrollAnimation();
+  const { ref: gridRef, isVisible: gridVisible } = useScrollAnimation();
+
   return (
     <section id="duvidas" className="py-16 md:py-24 px-4 md:px-6">
       <div className="mx-auto max-w-4xl">
         {/* Title */}
-        <h2 className="text-3xl md:text-4xl font-bold text-center text-ih-text mb-12 md:mb-16">
+        <h2
+          ref={titleRef}
+          className={cn(
+            "text-3xl md:text-4xl font-bold text-center text-ih-text mb-12 md:mb-16 opacity-0",
+            titleVisible && "animate-fade-up"
+          )}
+        >
           Perguntas que todo mundo faz
         </h2>
 
         {/* FAQ Grid */}
-        <div className="grid gap-4 md:grid-cols-2 md:gap-6">
-          {faqs.map((faq) => (
+        <div ref={gridRef} className="grid gap-4 md:grid-cols-2 md:gap-6">
+          {faqs.map((faq, index) => (
             <div
               key={faq.question}
-              className="bg-ih-surface rounded-xl p-5 md:p-6 shadow-card-sm"
+              className={cn(
+                "bg-ih-surface rounded-xl p-5 md:p-6 shadow-card-sm opacity-0 transition-transform duration-300 hover:-translate-y-1",
+                gridVisible && "animate-fade-up"
+              )}
+              style={{ animationDelay: gridVisible ? `${index * 100}ms` : "0ms" }}
             >
               <div className="flex items-start gap-3 mb-3">
                 <HelpCircle className="h-5 w-5 text-genea-green flex-shrink-0 mt-0.5" />

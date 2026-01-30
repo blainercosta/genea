@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { Quote, ChevronLeft, ChevronRight } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useScrollAnimation } from "@/hooks";
 
 const testimonials = [
   {
@@ -27,6 +28,8 @@ const testimonials = [
 
 export function TestimonialsSection() {
   const [currentIndex, setCurrentIndex] = useState(0);
+  const { ref: titleRef, isVisible: titleVisible } = useScrollAnimation();
+  const { ref: cardsRef, isVisible: cardsVisible } = useScrollAnimation();
 
   const nextSlide = () => {
     setCurrentIndex((prev) => (prev + 1) % testimonials.length);
@@ -40,20 +43,40 @@ export function TestimonialsSection() {
     <section className="py-16 md:py-24 px-4 md:px-6 bg-ih-surface-warm">
       <div className="mx-auto max-w-6xl">
         {/* Title */}
-        <h2 className="text-3xl md:text-4xl font-bold text-center text-ih-text mb-12 md:mb-16">
+        <h2
+          ref={titleRef}
+          className={cn(
+            "text-3xl md:text-4xl font-bold text-center text-ih-text mb-12 md:mb-16 opacity-0",
+            titleVisible && "animate-fade-up"
+          )}
+        >
           O que as pessoas falam
         </h2>
 
         {/* Desktop Grid */}
-        <div className="hidden md:grid md:grid-cols-3 gap-8">
-          {testimonials.map((testimonial) => (
-            <TestimonialCard key={testimonial.name} testimonial={testimonial} />
+        <div ref={cardsRef} className="hidden md:grid md:grid-cols-3 gap-8">
+          {testimonials.map((testimonial, index) => (
+            <div
+              key={testimonial.name}
+              className={cn(
+                "opacity-0",
+                cardsVisible && "animate-fade-up"
+              )}
+              style={{ animationDelay: cardsVisible ? `${index * 150}ms` : "0ms" }}
+            >
+              <TestimonialCard testimonial={testimonial} />
+            </div>
           ))}
         </div>
 
         {/* Mobile Carousel */}
         <div className="md:hidden">
-          <div className="relative">
+          <div
+            className={cn(
+              "relative opacity-0",
+              cardsVisible && "animate-scale-in"
+            )}
+          >
             <TestimonialCard testimonial={testimonials[currentIndex]} />
 
             {/* Navigation Buttons */}
@@ -99,7 +122,7 @@ export function TestimonialsSection() {
 
 function TestimonialCard({ testimonial }: { testimonial: typeof testimonials[0] }) {
   return (
-    <div className="bg-ih-surface rounded-2xl p-6 shadow-card">
+    <div className="bg-ih-surface rounded-2xl p-6 shadow-card transition-transform duration-300 hover:-translate-y-1">
       {/* Quote Icon - flipped horizontally and vertically */}
       <Quote className="h-8 w-8 text-genea-green/30 mb-4 -scale-100" />
 

@@ -1,6 +1,8 @@
 "use client";
 
-import { Camera, Wand2, Download, RefreshCw, Play } from "lucide-react";
+import { Camera, Wand2, Download, RefreshCw } from "lucide-react";
+import { useScrollAnimation } from "@/hooks";
+import { cn } from "@/lib/utils";
 
 const steps = [
   {
@@ -21,42 +23,52 @@ const steps = [
 ];
 
 export function HowItWorksSection() {
+  const { ref: titleRef, isVisible: titleVisible } = useScrollAnimation();
+  const { ref: stepsRef, isVisible: stepsVisible } = useScrollAnimation();
+  const { ref: noteRef, isVisible: noteVisible } = useScrollAnimation();
+
   return (
     <section id="como-funciona" className="py-16 md:py-24 px-4 md:px-6">
       <div className="mx-auto max-w-6xl">
         {/* Title */}
-        <h2 className="text-3xl md:text-4xl font-bold text-center text-ih-text mb-12 md:mb-16">
+        <h2
+          ref={titleRef}
+          className={cn(
+            "text-3xl md:text-4xl font-bold text-center text-ih-text mb-12 md:mb-16 opacity-0",
+            titleVisible && "animate-fade-up"
+          )}
+        >
           Funciona assim
         </h2>
 
-        {/* Video/Image Placeholder */}
-        <div className="relative aspect-video max-w-3xl mx-auto mb-12 md:mb-16 rounded-2xl overflow-hidden bg-ih-surface-warm">
-          <img
-            src="https://images.unsplash.com/photo-1516035069371-29a1b244cc32?w=800&h=450&fit=crop&auto=format"
-            alt="Pessoa usando celular para fotografar foto antiga"
-            className="w-full h-full object-cover"
-          />
-          {/* Play button overlay */}
-          <button
-            className="absolute inset-0 flex items-center justify-center bg-black/20 hover:bg-black/30 transition-colors group focus:outline-none focus-visible:ring-2 focus-visible:ring-genea-green focus-visible:ring-offset-2"
-            aria-label="Assistir vídeo demonstrativo"
-          >
-            <div className="w-16 h-16 md:w-20 md:h-20 rounded-full bg-white/90 flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform">
-              <Play className="h-7 w-7 md:h-8 md:w-8 text-genea-green ml-1" fill="currentColor" />
-            </div>
-          </button>
-        </div>
-
         {/* Steps */}
-        <div className="relative">
+        <div ref={stepsRef} className="relative">
           {/* Desktop connecting line */}
-          <div className="hidden md:block absolute top-[40px] left-[16.67%] right-[16.67%] h-0.5 border-t-2 border-dashed border-ih-border-strong" />
+          <div
+            className={cn(
+              "hidden md:block absolute top-[40px] left-[16.67%] right-[16.67%] h-0.5 border-t-2 border-dashed border-ih-border-strong opacity-0 transition-opacity duration-500",
+              stepsVisible && "opacity-100"
+            )}
+            style={{ transitionDelay: stepsVisible ? "300ms" : "0ms" }}
+          />
 
           <div className="grid gap-8 md:grid-cols-3 md:gap-6">
             {steps.map((step, index) => (
-              <div key={step.title} className="relative flex flex-col items-center text-center">
+              <div
+                key={step.title}
+                className={cn(
+                  "relative flex flex-col items-center text-center opacity-0",
+                  stepsVisible && "animate-fade-up"
+                )}
+                style={{ animationDelay: stepsVisible ? `${index * 150}ms` : "0ms" }}
+              >
                 {/* Icon */}
-                <div className="relative z-10 w-20 h-20 rounded-full bg-ih-bg flex items-center justify-center mb-4 border-4 border-genea-green/20">
+                <div
+                  className={cn(
+                    "relative z-10 w-20 h-20 rounded-full bg-ih-bg flex items-center justify-center mb-4 border-4 border-genea-green/20 transition-transform duration-300",
+                    stepsVisible && "hover:scale-110"
+                  )}
+                >
                   <step.icon className="h-8 w-8 text-genea-green" />
                 </div>
 
@@ -81,7 +93,14 @@ export function HowItWorksSection() {
         </div>
 
         {/* Adjustment note */}
-        <div className="mt-12 flex items-center justify-center gap-3 bg-ih-surface-warm rounded-xl p-4 md:p-6 max-w-2xl mx-auto">
+        <div
+          ref={noteRef}
+          className={cn(
+            "mt-12 flex items-center justify-center gap-3 bg-ih-surface-warm rounded-xl p-4 md:p-6 max-w-2xl mx-auto opacity-0",
+            noteVisible && "animate-fade-up"
+          )}
+          style={{ animationDelay: noteVisible ? "200ms" : "0ms" }}
+        >
           <RefreshCw className="h-5 w-5 text-genea-green flex-shrink-0" />
           <p className="text-ih-text">
             <span className="font-semibold">Não ficou perfeita?</span> Pede ajuste quantas vezes quiser, sem pagar mais.

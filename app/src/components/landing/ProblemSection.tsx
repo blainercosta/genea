@@ -3,6 +3,8 @@
 import Link from "next/link";
 import { AlertTriangle } from "lucide-react";
 import { Button } from "@/components/ui/Button";
+import { useScrollAnimation } from "@/hooks";
+import { cn } from "@/lib/utils";
 
 const S3_IMAGE = "https://genea-photos.s3.sa-east-1.amazonaws.com/landing/image-example-desgaste.png";
 
@@ -34,24 +36,47 @@ const timelineSteps = [
 ];
 
 export function ProblemSection() {
+  const { ref: titleRef, isVisible: titleVisible } = useScrollAnimation();
+  const { ref: timelineRef, isVisible: timelineVisible } = useScrollAnimation();
+  const { ref: calloutRef, isVisible: calloutVisible } = useScrollAnimation();
+
   return (
     <section className="py-16 md:py-24 px-4 md:px-6 bg-ih-surface-warm">
       <div className="mx-auto max-w-6xl">
         {/* Title */}
-        <h2 className="text-3xl md:text-4xl font-bold text-center text-ih-text mb-12 md:mb-16">
+        <h2
+          ref={titleRef}
+          className={cn(
+            "text-3xl md:text-4xl font-bold text-center text-ih-text mb-12 md:mb-16 opacity-0",
+            titleVisible && "animate-fade-up"
+          )}
+        >
           Fotos velhas estragam cada vez mais
         </h2>
 
         {/* Desktop Timeline */}
-        <div className="hidden md:block relative mb-12">
+        <div ref={timelineRef} className="hidden md:block relative mb-12">
           {/* Connecting Line */}
-          <div className="absolute top-[96px] left-0 right-0 h-0.5 border-t-2 border-dashed border-ih-border-strong" />
+          <div
+            className={cn(
+              "absolute top-[96px] left-0 right-0 h-0.5 border-t-2 border-dashed border-ih-border-strong opacity-0 transition-opacity duration-700",
+              timelineVisible && "opacity-100"
+            )}
+            style={{ transitionDelay: timelineVisible ? "400ms" : "0ms" }}
+          />
 
           <div className="grid grid-cols-4 gap-6">
             {timelineSteps.map((step, index) => (
-              <div key={step.year} className="relative flex flex-col items-center">
+              <div
+                key={step.year}
+                className={cn(
+                  "relative flex flex-col items-center opacity-0",
+                  timelineVisible && "animate-fade-up"
+                )}
+                style={{ animationDelay: timelineVisible ? `${index * 100}ms` : "0ms" }}
+              >
                 {/* Photo */}
-                <div className="relative w-36 aspect-[3/4] rounded-xl overflow-hidden bg-ih-surface shadow-card-sm mb-4">
+                <div className="relative w-36 aspect-[3/4] rounded-xl overflow-hidden bg-ih-surface shadow-card-sm mb-4 transition-transform duration-300 hover:scale-105">
                   <img
                     src={step.image}
                     alt={`Foto em ${step.year}`}
@@ -81,7 +106,14 @@ export function ProblemSection() {
         {/* Mobile Timeline */}
         <div className="md:hidden space-y-6 mb-12">
           {timelineSteps.map((step, index) => (
-            <div key={step.year} className="relative flex items-center gap-4">
+            <div
+              key={step.year}
+              className={cn(
+                "relative flex items-center gap-4 opacity-0",
+                timelineVisible && "animate-slide-right"
+              )}
+              style={{ animationDelay: timelineVisible ? `${index * 100}ms` : "0ms" }}
+            >
               {/* Photo */}
               <div className="relative w-20 aspect-[3/4] rounded-xl overflow-hidden bg-ih-surface shadow-card-sm flex-shrink-0">
                 <img
@@ -113,7 +145,13 @@ export function ProblemSection() {
         </div>
 
         {/* Urgency Callout */}
-        <div className="bg-genea-amber/10 border border-genea-amber/30 rounded-2xl p-4 md:p-6 mb-8">
+        <div
+          ref={calloutRef}
+          className={cn(
+            "bg-genea-amber/10 border border-genea-amber/30 rounded-2xl p-4 md:p-6 mb-8 opacity-0",
+            calloutVisible && "animate-scale-in"
+          )}
+        >
           <div className="flex items-start gap-3">
             <AlertTriangle className="h-5 w-5 text-genea-amber flex-shrink-0 mt-0.5" />
             <p className="text-ih-text">
@@ -124,7 +162,13 @@ export function ProblemSection() {
         </div>
 
         {/* CTA */}
-        <div className="flex justify-center">
+        <div
+          className={cn(
+            "flex justify-center opacity-0",
+            calloutVisible && "animate-fade-up"
+          )}
+          style={{ animationDelay: calloutVisible ? "200ms" : "0ms" }}
+        >
           <Link href="/start">
             <Button variant="secondary" size="lg">
               Salvar minhas fotos agora

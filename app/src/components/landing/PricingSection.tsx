@@ -5,6 +5,7 @@ import { Check, Shield } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { cn } from "@/lib/utils";
 import { analytics } from "@/lib/analytics";
+import { useScrollAnimation } from "@/hooks";
 
 const plans = [
   {
@@ -52,11 +53,21 @@ const plans = [
 ];
 
 export function PricingSection() {
+  const { ref: headerRef, isVisible: headerVisible } = useScrollAnimation();
+  const { ref: cardsRef, isVisible: cardsVisible } = useScrollAnimation();
+  const { ref: paymentRef, isVisible: paymentVisible } = useScrollAnimation();
+
   return (
     <section id="precos" className="py-16 md:py-24 px-4 md:px-6">
       <div className="mx-auto max-w-6xl">
         {/* Header */}
-        <div className="text-center mb-12 md:mb-16">
+        <div
+          ref={headerRef}
+          className={cn(
+            "text-center mb-12 md:mb-16 opacity-0",
+            headerVisible && "animate-fade-up"
+          )}
+        >
           <h2 className="text-3xl md:text-4xl font-bold text-ih-text mb-4">
             Escolha quantas fotos quer restaurar
           </h2>
@@ -66,17 +77,19 @@ export function PricingSection() {
         </div>
 
         {/* Pricing Cards */}
-        <div className="grid gap-6 md:grid-cols-3 md:gap-8 mb-10">
+        <div ref={cardsRef} className="grid gap-6 md:grid-cols-3 md:gap-8 mb-10">
           {/* Desktop: original order (highlighted in center). Mobile: highlighted first via CSS order */}
-          {plans.map((plan) => (
+          {plans.map((plan, index) => (
             <div
               key={plan.name}
               className={cn(
-                "relative rounded-2xl p-6 md:p-8",
+                "relative rounded-2xl p-6 md:p-8 opacity-0 transition-transform duration-300 hover:-translate-y-2",
                 plan.highlighted
                   ? "bg-genea-green text-white shadow-lg md:scale-105 md:-my-4 order-first md:order-none"
-                  : "bg-ih-surface shadow-card"
+                  : "bg-ih-surface shadow-card",
+                cardsVisible && "animate-fade-up"
               )}
+              style={{ animationDelay: cardsVisible ? `${index * 150}ms` : "0ms" }}
             >
               {/* Badge */}
               {plan.badge && (
@@ -161,7 +174,13 @@ export function PricingSection() {
         </div>
 
         {/* Payment Methods */}
-        <div className="text-center space-y-4">
+        <div
+          ref={paymentRef}
+          className={cn(
+            "text-center space-y-4 opacity-0",
+            paymentVisible && "animate-fade-up"
+          )}
+        >
           <div className="flex items-center justify-center gap-4">
             <PaymentIcon type="pix" />
             <PaymentIcon type="visa" />

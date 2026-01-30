@@ -1,16 +1,27 @@
 "use client";
 
 import { Quote } from "lucide-react";
+import { useScrollAnimation } from "@/hooks";
+import { cn } from "@/lib/utils";
 
 export function FounderSection() {
+  const { ref: photoRef, isVisible: photoVisible } = useScrollAnimation();
+  const { ref: textRef, isVisible: textVisible } = useScrollAnimation();
+
   return (
     <section className="py-16 md:py-24 px-4 md:px-6 bg-ih-surface-warm">
       <div className="mx-auto max-w-4xl">
         <div className="grid gap-8 md:grid-cols-[200px_1fr] lg:grid-cols-[240px_1fr] items-center">
           {/* Photo */}
-          <div className="flex justify-center md:justify-start">
+          <div
+            ref={photoRef}
+            className={cn(
+              "flex justify-center md:justify-start opacity-0",
+              photoVisible && "animate-scale-in"
+            )}
+          >
             <div className="relative">
-              <div className="w-40 h-40 md:w-48 md:h-48 rounded-full overflow-hidden bg-ih-surface shadow-card">
+              <div className="w-40 h-40 md:w-48 md:h-48 rounded-full overflow-hidden bg-ih-surface shadow-card transition-transform duration-300 hover:scale-105">
                 <img
                   src="https://genea-photos.s3.sa-east-1.amazonaws.com/landing/profile-blainer.png"
                   alt="Blainer Costa, Fundador do Genea"
@@ -23,25 +34,48 @@ export function FounderSection() {
           </div>
 
           {/* Text */}
-          <div className="space-y-6 text-center md:text-left">
-            <h2 className="text-2xl md:text-3xl font-bold text-ih-text">
+          <div ref={textRef} className="space-y-6 text-center md:text-left">
+            <h2
+              className={cn(
+                "text-2xl md:text-3xl font-bold text-ih-text opacity-0",
+                textVisible && "animate-fade-up"
+              )}
+            >
               Por que a gente faz isso
             </h2>
 
             {/* Quote */}
-            <div className="relative">
+            <div
+              className={cn(
+                "relative opacity-0",
+                textVisible && "animate-fade-up"
+              )}
+              style={{ animationDelay: textVisible ? "100ms" : "0ms" }}
+            >
               <Quote className="absolute -top-2 -left-2 h-8 w-8 text-genea-green/20 hidden md:block -scale-100" />
               <blockquote className="text-lg md:text-xl text-ih-text-secondary leading-relaxed italic md:pl-8">
                 Eu perdi a única foto da minha avó numa mudança. Nunca mais vi o rosto dela. Criei o Genea pra isso não acontecer com outras famílias.
               </blockquote>
             </div>
 
-            <p className="text-lg text-ih-text-secondary leading-relaxed md:pl-8">
+            <p
+              className={cn(
+                "text-lg text-ih-text-secondary leading-relaxed md:pl-8 opacity-0",
+                textVisible && "animate-fade-up"
+              )}
+              style={{ animationDelay: textVisible ? "200ms" : "0ms" }}
+            >
               Toda foto antiga conta uma história. A gente ajuda a salvar essas histórias.
             </p>
 
             {/* Signature */}
-            <div className="md:pl-8">
+            <div
+              className={cn(
+                "md:pl-8 opacity-0",
+                textVisible && "animate-fade-up"
+              )}
+              style={{ animationDelay: textVisible ? "300ms" : "0ms" }}
+            >
               <p className="font-semibold text-ih-text">Blainer Costa</p>
               <p className="text-sm text-ih-text-muted">Fundador do Genea</p>
             </div>

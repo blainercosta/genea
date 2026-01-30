@@ -1,6 +1,8 @@
 "use client";
 
 import { BeforeAfterSlider } from "./BeforeAfterSlider";
+import { useScrollAnimation } from "@/hooks";
+import { cn } from "@/lib/utils";
 
 const S3_BASE = "https://genea-photos.s3.sa-east-1.amazonaws.com/landing";
 
@@ -26,11 +28,20 @@ const results = [
 ];
 
 export function ResultsSection() {
+  const { ref: headerRef, isVisible: headerVisible } = useScrollAnimation();
+  const { ref: cardsRef, isVisible: cardsVisible } = useScrollAnimation();
+
   return (
     <section id="resultados" className="py-16 md:py-24 px-4 md:px-6">
       <div className="mx-auto max-w-6xl">
         {/* Header */}
-        <div className="text-center mb-12 md:mb-16">
+        <div
+          ref={headerRef}
+          className={cn(
+            "text-center mb-12 md:mb-16 opacity-0",
+            headerVisible && "animate-fade-up"
+          )}
+        >
           <h2 className="text-3xl md:text-4xl font-bold text-ih-text mb-4">
             Veja o que a gente já fez
           </h2>
@@ -40,11 +51,15 @@ export function ResultsSection() {
         </div>
 
         {/* Cards Grid */}
-        <div className="grid gap-8 md:grid-cols-3">
-          {results.map((result) => (
+        <div ref={cardsRef} className="grid gap-8 md:grid-cols-3">
+          {results.map((result, index) => (
             <div
               key={result.tag}
-              className="bg-ih-surface rounded-2xl shadow-card overflow-hidden"
+              className={cn(
+                "bg-ih-surface rounded-2xl shadow-card overflow-hidden opacity-0 transition-transform duration-300 hover:-translate-y-2",
+                cardsVisible && "animate-fade-up"
+              )}
+              style={{ animationDelay: cardsVisible ? `${index * 150}ms` : "0ms" }}
             >
               {/* Slider */}
               <div className="p-4 pb-0">
