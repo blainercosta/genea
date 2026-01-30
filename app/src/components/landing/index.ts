@@ -1,0 +1,14 @@
+export { Navbar } from "./Navbar";
+export { HeroSection } from "./HeroSection";
+export { ProblemSection } from "./ProblemSection";
+export { ResultsSection } from "./ResultsSection";
+export { GenealogySection } from "./GenealogySection";
+export { HowItWorksSection } from "./HowItWorksSection";
+export { FounderSection } from "./FounderSection";
+export { PricingSection } from "./PricingSection";
+export { TestimonialsSection } from "./TestimonialsSection";
+export { FAQSection } from "./FAQSection";
+export { FinalCTASection } from "./FinalCTASection";
+export { Footer } from "./Footer";
+export { MobileStickyButton } from "./MobileStickyButton";
+export { BeforeAfterSlider } from "./BeforeAfterSlider";

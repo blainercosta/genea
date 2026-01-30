@@ -1,0 +1,36 @@
+@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html {
+    @apply antialiased;
+  }
+
+  body {
+    @apply bg-ih-bg text-ih-text font-sans;
+  }
+}
+
+@layer components {
+  .btn-primary {
+    @apply flex items-center justify-center rounded-[10px] bg-genea-green text-white font-medium
+           transition-colors hover:bg-genea-green-hover disabled:opacity-50 disabled:cursor-not-allowed;
+  }
+
+  .btn-secondary {
+    @apply flex items-center justify-center rounded-[10px] border-2 border-genea-green text-genea-green
+           font-medium transition-colors hover:bg-genea-green hover:text-white;
+  }
+
+  .card {
+    @apply rounded-2xl bg-ih-surface shadow-card;
+  }
+
+  .input {
+    @apply w-full rounded-lg border border-ih-border bg-ih-surface px-4 py-3 text-ih-text
+           placeholder:text-ih-text-muted focus:border-genea-green focus:outline-none focus:ring-1 focus:ring-genea-green;
+  }
+}
