@@ -56,11 +56,14 @@ function ResultContent() {
   const handleDownload = () => {
     if (!restoration?.restoredUrl) return;
 
+    const isTrialUser = isTrial();
+
     // Track download
-    analytics.downloadClick(isTrial());
+    analytics.downloadClick(isTrialUser);
 
     // Use proxy API to download (avoids CORS issues with S3)
-    const downloadUrl = `/api/download?url=${encodeURIComponent(restoration.restoredUrl)}`;
+    // Add trial param to apply watermark for trial users
+    const downloadUrl = `/api/download?url=${encodeURIComponent(restoration.restoredUrl)}${isTrialUser ? "&trial=true" : ""}`;
 
     // Create download link
     const link = document.createElement("a");
