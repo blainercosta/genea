@@ -1,31 +1,43 @@
 import sharp from "sharp";
 
-// Logo SVG with reduced opacity for watermark
-const WATERMARK_SVG = `
-<svg width="120" height="168" viewBox="0 0 458 640" fill="none" xmlns="http://www.w3.org/2000/svg">
-  <path d="M228.571 0L265.522 199.043L457.143 131.379L302.472 262.759L457.143 394.138L265.522 326.474L228.571 640L191.621 326.474L0 394.138L154.671 262.759L0 131.379L191.621 199.043L228.571 0Z" fill="white" fill-opacity="0.4"/>
+// Logo SVG with white color and opacity for watermark
+const LOGO_SVG = `
+<svg width="60" height="84" viewBox="0 0 458 640" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <path d="M228.571 0L265.522 199.043L457.143 131.379L302.472 262.759L457.143 394.138L265.522 326.474L228.571 640L191.621 326.474L0 394.138L154.671 262.759L0 131.379L191.621 199.043L228.571 0Z" fill="white" fill-opacity="0.35"/>
+</svg>
+`;
+
+// Text SVG for "feito no genea.cc"
+const TEXT_SVG = `
+<svg width="120" height="20" xmlns="http://www.w3.org/2000/svg">
+  <text x="60" y="14" text-anchor="middle" font-family="Arial, sans-serif" font-size="12" font-weight="500" fill="white" fill-opacity="0.35">feito no genea.cc</text>
 </svg>
 `;
 
 /**
  * Creates a tiled watermark pattern for the given image dimensions
+ * Each tile contains the logo + text "feito no genea.cc"
  */
 async function createWatermarkPattern(
   width: number,
   height: number
 ): Promise<Buffer> {
-  const logoWidth = 120;
-  const logoHeight = 168;
-  const spacing = 80; // Space between logos
-  const stepX = logoWidth + spacing;
-  const stepY = logoHeight + spacing;
+  const logoWidth = 60;
+  const logoHeight = 84;
+  const textWidth = 120;
+  const textHeight = 20;
+  const tileHeight = logoHeight + textHeight + 8; // logo + gap + text
+  const spacing = 100; // Space between tiles
+  const stepX = textWidth + spacing;
+  const stepY = tileHeight + spacing;
 
-  // Calculate how many logos fit
+  // Calculate how many tiles fit
   const cols = Math.ceil(width / stepX) + 1;
   const rows = Math.ceil(height / stepY) + 1;
 
-  // Create individual logo buffer
-  const logoBuffer = Buffer.from(WATERMARK_SVG);
+  // Create buffers for logo and text
+  const logoBuffer = Buffer.from(LOGO_SVG);
+  const textBuffer = Buffer.from(TEXT_SVG);
 
   // Create composite operations for tiled pattern
   const composites: sharp.OverlayOptions[] = [];
@@ -34,14 +46,30 @@ async function createWatermarkPattern(
     for (let col = 0; col < cols; col++) {
       // Offset every other row for diagonal effect
       const offsetX = row % 2 === 0 ? 0 : stepX / 2;
-      const x = Math.round(col * stepX + offsetX - stepX / 2);
-      const y = Math.round(row * stepY - stepY / 2);
+      const baseX = Math.round(col * stepX + offsetX - stepX / 2);
+      const baseY = Math.round(row * stepY - stepY / 2);
 
-      if (x < width && y < height && x > -logoWidth && y > -logoHeight) {
+      // Add logo (centered in tile)
+      const logoX = baseX + (textWidth - logoWidth) / 2;
+      const logoY = baseY;
+
+      if (logoX < width && logoY < height && logoX > -logoWidth && logoY > -logoHeight) {
         composites.push({
           input: logoBuffer,
-          top: Math.max(0, y),
-          left: Math.max(0, x),
+          top: Math.max(0, logoY),
+          left: Math.max(0, Math.round(logoX)),
+        });
+      }
+
+      // Add text below logo
+      const textX = baseX;
+      const textY = baseY + logoHeight + 8;
+
+      if (textX < width && textY < height && textX > -textWidth && textY > -textHeight) {
+        composites.push({
+          input: textBuffer,
+          top: Math.max(0, textY),
+          left: Math.max(0, textX),
         });
       }
     }

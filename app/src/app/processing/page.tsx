@@ -19,6 +19,7 @@ function ProcessingContent() {
   const imageUrl = searchParams.get("url");
   const adjustmentsParam = searchParams.get("adjustments");
   const customNote = searchParams.get("note");
+  const isTrial = searchParams.get("trial") === "true";
 
   // Parse adjustments from JSON - memoize to avoid re-renders
   const adjustments = useMemo<string[]>(
@@ -128,9 +129,10 @@ function ProcessingContent() {
       const decodedNote = customNote ? decodeURIComponent(customNote) : undefined;
       adjust(decodedUrl, adjustments, decodedNote);
     } else {
-      restore(decodedUrl);
+      // Pass isTrial flag for resolution selection (trial=1K, paid=2K)
+      restore(decodedUrl, isTrial);
     }
-  }, [imageUrl, status, mode, adjustments, customNote, restore, adjust]);
+  }, [imageUrl, status, mode, adjustments, customNote, restore, adjust, isTrial]);
 
   const previewUrl = imageUrl ? decodeURIComponent(imageUrl) : undefined;
 

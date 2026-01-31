@@ -45,7 +45,9 @@ export default function UploadPage() {
 
       // Credit already consumed in handleUpload BEFORE upload started
       analytics.uploadComplete(currentFile?.size || 0, currentFile?.type || "unknown");
-      router.push(`/processing?id=${restorationId}&url=${encodeURIComponent(url)}`);
+      // Pass trial flag (determined BEFORE consumeCredit was called)
+      const wasTrialAtStart = !isPaid;
+      router.push(`/processing?id=${restorationId}&url=${encodeURIComponent(url)}&trial=${wasTrialAtStart}`);
     },
     onError: (err) => {
       analytics.uploadError(typeof err === "string" ? err : "Unknown error");

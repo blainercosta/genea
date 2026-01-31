@@ -22,8 +22,9 @@ export function useRestore(options: UseRestoreOptions = {}) {
   const abortControllerRef = useRef<AbortController | null>(null);
 
   // Start restoration (synchronous - waits for result)
+  // isTrial: true = 1K resolution, false = 2K resolution
   const restore = useCallback(
-    async (imageUrl: string) => {
+    async (imageUrl: string, isTrial = false) => {
       // Cancel any existing request
       abortControllerRef.current?.abort();
 
@@ -47,7 +48,7 @@ export function useRestore(options: UseRestoreOptions = {}) {
           headers: {
             "Content-Type": "application/json",
           },
-          body: JSON.stringify({ imageUrl }),
+          body: JSON.stringify({ imageUrl, isTrial }),
           signal: abortController.signal,
         });
 

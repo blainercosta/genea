@@ -20,12 +20,25 @@ function validateApiKey(): void {
   }
 }
 
+interface RestoreOptions {
+  isTrial?: boolean;
+}
+
 /**
  * Restore a photo using fal.ai Nano Banana Pro
  * This model edits and enhances images based on prompts
+ *
+ * Trial users get 1K resolution (~1080p)
+ * Paid users get 2K resolution
  */
-export async function restorePhoto(imageUrl: string): Promise<FalRestoreResponse> {
+export async function restorePhoto(
+  imageUrl: string,
+  options: RestoreOptions = {}
+): Promise<FalRestoreResponse> {
   validateApiKey();
+
+  // Trial: 1K (~1080p), Paid: 2K (higher quality)
+  const resolution = options.isTrial ? "1K" : "2K";
 
   const response = await fetch(FAL_API_URL, {
     method: "POST",
@@ -37,7 +50,7 @@ export async function restorePhoto(imageUrl: string): Promise<FalRestoreResponse
       prompt: RESTORATION_PROMPT,
       image_urls: [imageUrl],
       num_images: 1,
-      resolution: "2K",
+      resolution,
       output_format: "png",
     }),
   });

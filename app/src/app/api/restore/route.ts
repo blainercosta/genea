@@ -17,7 +17,7 @@ export async function POST(request: NextRequest) {
 
   try {
     const body = await request.json();
-    const { imageUrl } = body;
+    const { imageUrl, isTrial = false } = body;
 
     if (!imageUrl) {
       return NextResponse.json(
@@ -26,10 +26,10 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    console.log("Starting restoration for:", imageUrl);
+    console.log("Starting restoration for:", imageUrl, isTrial ? "(trial - 1K)" : "(paid - 2K)");
 
-    // Restore photo via fal.ai
-    const result = await restorePhoto(imageUrl);
+    // Restore photo via fal.ai (trial gets 1K, paid gets 2K resolution)
+    const result = await restorePhoto(imageUrl, { isTrial });
     const falUrl = result.image.url;
 
     console.log("Restoration complete from fal.ai:", falUrl);
