@@ -6,6 +6,20 @@ const resend = process.env.RESEND_API_KEY
 
 const FROM_EMAIL = "Genea <noreply@mail.genea.cc>";
 
+/**
+ * Escape HTML to prevent XSS in email templates
+ */
+function escapeHtml(str: string): string {
+  const htmlEscapes: Record<string, string> = {
+    "&": "&amp;",
+    "<": "&lt;",
+    ">": "&gt;",
+    '"': "&quot;",
+    "'": "&#39;",
+  };
+  return str.replace(/[&<>"']/g, (char) => htmlEscapes[char] || char);
+}
+
 export type EmailTemplate =
   | "welcome"
   | "restoration_complete"
@@ -113,7 +127,8 @@ const templates: Record<
     subject: "Bem-vindo ao Genea! 🎉",
     getHtml: (data: unknown) => {
       const { name } = data as WelcomeData;
-      const greeting = name ? `Olá, ${name}!` : "Olá!";
+      const safeName = name ? escapeHtml(name) : "";
+      const greeting = safeName ? `Olá, ${safeName}!` : "Olá!";
       return emailLayout(`
         <h2 style="margin: 0 0 16px; color: #111827; font-size: 24px;">${greeting}</h2>
         <p style="margin: 0 0 16px; color: #374151; font-size: 16px; line-height: 1.6;">
@@ -138,7 +153,9 @@ const templates: Record<
     subject: "Sua foto foi restaurada! ✨",
     getHtml: (data: unknown) => {
       const { name, restorationUrl } = data as RestorationCompleteData;
-      const greeting = name ? `${name}, sua` : "Sua";
+      const safeName = name ? escapeHtml(name) : "";
+      const safeUrl = escapeHtml(restorationUrl);
+      const greeting = safeName ? `${safeName}, sua` : "Sua";
       return emailLayout(`
         <h2 style="margin: 0 0 16px; color: #111827; font-size: 24px;">${greeting} foto ficou incrível!</h2>
         <p style="margin: 0 0 24px; color: #374151; font-size: 16px; line-height: 1.6;">
@@ -149,7 +166,7 @@ const templates: Record<
             ⏰ <strong>Atenção:</strong> O link para download expira em 24 horas.
           </p>
         </div>
-        <a href="${restorationUrl}" style="display: inline-block; background-color: #16a34a; color: #ffffff; text-decoration: none; padding: 14px 28px; border-radius: 8px; font-weight: 600; font-size: 16px;">
+        <a href="${safeUrl}" style="display: inline-block; background-color: #16a34a; color: #ffffff; text-decoration: none; padding: 14px 28px; border-radius: 8px; font-weight: 600; font-size: 16px;">
           Ver minha foto restaurada
         </a>
         <p style="margin: 24px 0 0; color: #6b7280; font-size: 14px;">
@@ -163,7 +180,9 @@ const templates: Record<
     subject: "Pagamento confirmado! 💚",
     getHtml: (data: unknown) => {
       const { name, planName, credits, amount } = data as PaymentConfirmedData;
-      const greeting = name ? `Obrigado, ${name}!` : "Obrigado!";
+      const safeName = name ? escapeHtml(name) : "";
+      const safePlanName = escapeHtml(planName);
+      const greeting = safeName ? `Obrigado, ${safeName}!` : "Obrigado!";
       return emailLayout(`
         <h2 style="margin: 0 0 16px; color: #111827; font-size: 24px;">${greeting}</h2>
         <p style="margin: 0 0 24px; color: #374151; font-size: 16px; line-height: 1.6;">
@@ -176,7 +195,7 @@ const templates: Record<
                 <span style="color: #6b7280; font-size: 14px;">Plano</span>
               </td>
               <td style="padding: 8px 0; border-bottom: 1px solid #e5e7eb; text-align: right;">
-                <span style="color: #111827; font-size: 14px; font-weight: 600;">${planName}</span>
+                <span style="color: #111827; font-size: 14px; font-weight: 600;">${safePlanName}</span>
               </td>
             </tr>
             <tr>
@@ -208,7 +227,8 @@ const templates: Record<
     subject: "Reembolso processado",
     getHtml: (data: unknown) => {
       const { name, amount } = data as RefundProcessedData;
-      const greeting = name ? `Olá, ${name}!` : "Olá!";
+      const safeName = name ? escapeHtml(name) : "";
+      const greeting = safeName ? `Olá, ${safeName}!` : "Olá!";
       return emailLayout(`
         <h2 style="margin: 0 0 16px; color: #111827; font-size: 24px;">${greeting}</h2>
         <p style="margin: 0 0 24px; color: #374151; font-size: 16px; line-height: 1.6;">

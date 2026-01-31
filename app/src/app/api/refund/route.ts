@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createWithdrawal, isAbacateConfigured } from "@/lib/abacate";
 import { sendRefundProcessedEmail, isResendConfigured } from "@/lib/resend";
 import { checkRateLimit, RATE_LIMITS } from "@/lib/rateLimit";
+import { validatePixKey, isValidEmail } from "@/lib/validation";
 
 /**
  * POST /api/refund
@@ -32,16 +33,19 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    if (!pixKey || typeof pixKey !== "string" || pixKey.trim().length === 0) {
+    // Validate PIX key format
+    const pixValidation = validatePixKey(pixKey || "");
+    if (!pixValidation.isValid) {
       return NextResponse.json(
-        { error: "Chave PIX é obrigatória" },
+        { error: pixValidation.error || "Chave PIX inválida" },
         { status: 400 }
       );
     }
 
-    if (!email || typeof email !== "string") {
+    // Validate email
+    if (!email || typeof email !== "string" || !isValidEmail(email)) {
       return NextResponse.json(
-        { error: "Email é obrigatório" },
+        { error: "Email inválido" },
         { status: 400 }
       );
     }

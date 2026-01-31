@@ -238,3 +238,123 @@ export function isValidPhone(phone: string): boolean {
 
   return true;
 }
+
+/**
+ * PIX Key validation result
+ */
+export interface PixKeyValidationResult {
+  isValid: boolean;
+  type?: "cpf" | "email" | "phone" | "random" | "cnpj";
+  error?: string;
+}
+
+/**
+ * Validates a PIX key
+ * Supports: CPF, CNPJ, Email, Phone, Random key (EVP)
+ */
+export function validatePixKey(key: string): PixKeyValidationResult {
+  const trimmed = key.trim();
+
+  if (!trimmed) {
+    return { isValid: false, error: "Chave PIX é obrigatória" };
+  }
+
+  // Max length for PIX keys is 77 characters
+  if (trimmed.length > 77) {
+    return { isValid: false, error: "Chave PIX muito longa" };
+  }
+
+  // Check for email format
+  if (trimmed.includes("@")) {
+    if (isValidEmail(trimmed)) {
+      return { isValid: true, type: "email" };
+    }
+    return { isValid: false, error: "Email inválido como chave PIX" };
+  }
+
+  // Check for random key (EVP) - UUID format
+  const uuidRegex = /^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/i;
+  if (uuidRegex.test(trimmed)) {
+    return { isValid: true, type: "random" };
+  }
+
+  // Clean numeric-only input
+  const cleaned = trimmed.replace(/\D/g, "");
+
+  // Check for CPF (11 digits)
+  if (cleaned.length === 11) {
+    if (isValidCPF(cleaned)) {
+      return { isValid: true, type: "cpf" };
+    }
+    // Could also be a phone number
+    if (isValidPhone(cleaned)) {
+      return { isValid: true, type: "phone" };
+    }
+    return { isValid: false, error: "CPF ou telefone inválido" };
+  }
+
+  // Check for CNPJ (14 digits)
+  if (cleaned.length === 14) {
+    if (isValidCNPJ(cleaned)) {
+      return { isValid: true, type: "cnpj" };
+    }
+    return { isValid: false, error: "CNPJ inválido" };
+  }
+
+  // Check for phone (10 digits - landline)
+  if (cleaned.length === 10) {
+    if (isValidPhone(cleaned)) {
+      return { isValid: true, type: "phone" };
+    }
+    return { isValid: false, error: "Telefone inválido" };
+  }
+
+  return { isValid: false, error: "Formato de chave PIX não reconhecido" };
+}
+
+/**
+ * Simple PIX key validation check
+ */
+export function isValidPixKey(key: string): boolean {
+  return validatePixKey(key).isValid;
+}
+
+/**
+ * Validates Brazilian CNPJ
+ */
+export function isValidCNPJ(cnpj: string): boolean {
+  const cleaned = cnpj.replace(/\D/g, "");
+
+  if (cleaned.length !== 14) {
+    return false;
+  }
+
+  // Check for all same digits
+  if (/^(\d)\1+$/.test(cleaned)) {
+    return false;
+  }
+
+  // Validate first check digit
+  let sum = 0;
+  let weight = [5, 4, 3, 2, 9, 8, 7, 6, 5, 4, 3, 2];
+  for (let i = 0; i < 12; i++) {
+    sum += parseInt(cleaned[i]) * weight[i];
+  }
+  let checkDigit = sum % 11 < 2 ? 0 : 11 - (sum % 11);
+  if (checkDigit !== parseInt(cleaned[12])) {
+    return false;
+  }
+
+  // Validate second check digit
+  sum = 0;
+  weight = [6, 5, 4, 3, 2, 9, 8, 7, 6, 5, 4, 3, 2];
+  for (let i = 0; i < 13; i++) {
+    sum += parseInt(cleaned[i]) * weight[i];
+  }
+  checkDigit = sum % 11 < 2 ? 0 : 11 - (sum % 11);
+  if (checkDigit !== parseInt(cleaned[13])) {
+    return false;
+  }
+
+  return true;
+}

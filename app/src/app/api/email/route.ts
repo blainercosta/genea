@@ -7,6 +7,7 @@ import {
   sendRefundProcessedEmail,
 } from "@/lib/resend";
 import { isValidEmail } from "@/lib/validation";
+import { checkRateLimit, RATE_LIMITS } from "@/lib/rateLimit";
 
 /**
  * POST /api/email
@@ -49,6 +50,10 @@ type EmailRequest =
   | RefundProcessedRequest;
 
 export async function POST(request: NextRequest) {
+  // Rate limit: 5 emails per minute per IP
+  const rateLimitResponse = checkRateLimit(request, "email", RATE_LIMITS.email);
+  if (rateLimitResponse) return rateLimitResponse;
+
   try {
     if (!isResendConfigured()) {
       return NextResponse.json(

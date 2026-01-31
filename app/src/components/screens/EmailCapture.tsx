@@ -1,31 +1,157 @@
 "use client";
 
 import { useState, useMemo } from "react";
-import { Mail } from "lucide-react";
+import { Mail, KeyRound, Loader2, ArrowLeft } from "lucide-react";
 import { Header } from "@/components/layout";
 import { Button, Input, Card, Modal } from "@/components/ui";
 import { TermsContent, PrivacyContent } from "@/components/legal";
 import { validateEmail } from "@/lib/validation";
 
-interface EmailCaptureProps {
-  onSubmit?: (email: string) => void;
+interface AuthUser {
+  id: string;
+  email: string;
+  name?: string;
+  phone?: string;
+  taxId?: string;
+  credits: number;
+  isTrialUsed: boolean;
 }
 
-export function EmailCapture({ onSubmit }: EmailCaptureProps) {
+interface EmailCaptureProps {
+  onSubmit?: (email: string) => void;
+  onAuthenticated?: (user: AuthUser) => void;
+}
+
+type Step = "email" | "code";
+
+export function EmailCapture({ onSubmit, onAuthenticated }: EmailCaptureProps) {
+  const [step, setStep] = useState<Step>("email");
   const [email, setEmail] = useState("");
+  const [code, setCode] = useState("");
   const [acceptedTerms, setAcceptedTerms] = useState(false);
   const [showTerms, setShowTerms] = useState(false);
   const [showPrivacy, setShowPrivacy] = useState(false);
   const [touched, setTouched] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [hasCredits, setHasCredits] = useState(false);
+  const [isNewUser, setIsNewUser] = useState(false);
 
   // Validate email with comprehensive checks
   const validation = useMemo(() => validateEmail(email), [email]);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleEmailSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setTouched(true);
-    if (validation.isValid && acceptedTerms && onSubmit) {
-      onSubmit(email.trim().toLowerCase());
+    setError(null);
+
+    if (!validation.isValid || !acceptedTerms) return;
+
+    const normalizedEmail = email.trim().toLowerCase();
+    setIsLoading(true);
+
+    try {
+      // Send auth code
+      const response = await fetch("/api/auth", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "send", email: normalizedEmail }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || "Erro ao enviar código");
+      }
+
+      setHasCredits(data.hasCredits);
+      setIsNewUser(data.isNewUser);
+
+      // If user has credits, require code verification
+      if (data.hasCredits) {
+        setStep("code");
+      } else {
+        // New user or no credits - just proceed with email capture
+        // Also set step to code for authentication consistency
+        setStep("code");
+      }
+    } catch (err) {
+      console.error("Auth error:", err);
+      // If auth service not available, fall back to simple email capture
+      if (err instanceof Error && err.message.includes("não configurado")) {
+        onSubmit?.(normalizedEmail);
+      } else {
+        setError(err instanceof Error ? err.message : "Erro ao enviar código");
+      }
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleCodeSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError(null);
+
+    if (code.length !== 6) {
+      setError("Digite o código de 6 dígitos");
+      return;
+    }
+
+    setIsLoading(true);
+
+    try {
+      const response = await fetch("/api/auth", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "verify",
+          email: email.trim().toLowerCase(),
+          code,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || "Código inválido");
+      }
+
+      // Successfully authenticated
+      if (onAuthenticated && data.user) {
+        onAuthenticated(data.user);
+      } else if (onSubmit) {
+        onSubmit(email.trim().toLowerCase());
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Erro ao verificar código");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleResendCode = async () => {
+    setError(null);
+    setIsLoading(true);
+
+    try {
+      const response = await fetch("/api/auth", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "send", email: email.trim().toLowerCase() }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || "Erro ao reenviar código");
+      }
+
+      setError(null);
+      setCode("");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Erro ao reenviar código");
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -36,9 +162,14 @@ export function EmailCapture({ onSubmit }: EmailCaptureProps) {
     }
   };
 
+  const handleCodeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    // Only allow digits
+    const value = e.target.value.replace(/\D/g, "").slice(0, 6);
+    setCode(value);
+  };
+
   const handleSuggestionClick = () => {
     if (validation.suggestion) {
-      // Extract email from suggestion "Você quis dizer xxx?"
       const match = validation.suggestion.match(/(\S+@\S+\.\S+)/);
       if (match) {
         setEmail(match[1]);
@@ -46,9 +177,101 @@ export function EmailCapture({ onSubmit }: EmailCaptureProps) {
     }
   };
 
-  const canSubmit = validation.isValid && acceptedTerms;
-  const showError = touched && email.length > 0 && !validation.isValid;
+  const handleBackToEmail = () => {
+    setStep("email");
+    setCode("");
+    setError(null);
+  };
 
+  const canSubmitEmail = validation.isValid && acceptedTerms;
+  const showEmailError = touched && email.length > 0 && !validation.isValid;
+
+  // Code verification step
+  if (step === "code") {
+    return (
+      <div className="min-h-screen bg-ih-bg flex flex-col">
+        <Header />
+
+        <main className="flex-1 flex items-center justify-center p-6">
+          <Card className="w-full max-w-md p-8 md:p-10 flex flex-col items-center gap-8 shadow-card rounded-[20px]">
+            {/* Back button */}
+            <button
+              onClick={handleBackToEmail}
+              className="self-start flex items-center gap-2 text-ih-text-secondary hover:text-ih-text transition-colors"
+            >
+              <ArrowLeft className="w-4 h-4" />
+              <span className="text-sm">Voltar</span>
+            </button>
+
+            {/* Icon */}
+            <div className="w-14 h-14 md:w-16 md:h-16 rounded-2xl bg-genea-green/10 flex items-center justify-center">
+              <KeyRound className="w-7 h-7 md:w-8 md:h-8 text-genea-green" />
+            </div>
+
+            {/* Text */}
+            <div className="flex flex-col items-center gap-3 text-center">
+              <h1 className="text-2xl md:text-3xl font-semibold text-ih-text">
+                Digite o código
+              </h1>
+              <p className="text-ih-text-secondary">
+                Enviamos um código de 6 dígitos para{" "}
+                <span className="font-medium text-ih-text">{email}</span>
+              </p>
+            </div>
+
+            {/* Code form */}
+            <form onSubmit={handleCodeSubmit} className="w-full flex flex-col gap-5">
+              <div className="flex flex-col gap-2">
+                <Input
+                  type="text"
+                  inputMode="numeric"
+                  placeholder="000000"
+                  value={code}
+                  onChange={handleCodeChange}
+                  className="text-center text-2xl tracking-[0.5em] font-mono"
+                  maxLength={6}
+                  autoFocus
+                />
+                {error && <p className="text-sm text-red-500 text-center">{error}</p>}
+              </div>
+
+              <Button
+                type="submit"
+                size="lg"
+                disabled={code.length !== 6 || isLoading}
+                className="w-full"
+              >
+                {isLoading ? (
+                  <>
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    Verificando...
+                  </>
+                ) : (
+                  "Verificar código"
+                )}
+              </Button>
+            </form>
+
+            {/* Resend */}
+            <div className="text-center">
+              <p className="text-sm text-ih-text-muted mb-2">
+                Não recebeu o código?
+              </p>
+              <button
+                onClick={handleResendCode}
+                disabled={isLoading}
+                className="text-sm text-genea-green hover:underline disabled:opacity-50"
+              >
+                Enviar novamente
+              </button>
+            </div>
+          </Card>
+        </main>
+      </div>
+    );
+  }
+
+  // Email capture step
   return (
     <div className="min-h-screen bg-ih-bg flex flex-col">
       <Header />
@@ -71,16 +294,16 @@ export function EmailCapture({ onSubmit }: EmailCaptureProps) {
           </div>
 
           {/* Form */}
-          <form onSubmit={handleSubmit} className="w-full flex flex-col gap-5">
+          <form onSubmit={handleEmailSubmit} className="w-full flex flex-col gap-5">
             <div className="flex flex-col gap-1">
               <Input
                 type="email"
                 placeholder="seu@email.com"
                 value={email}
                 onChange={handleEmailChange}
-                className={showError ? "border-red-400 focus:border-red-400 focus:ring-red-400" : ""}
+                className={showEmailError ? "border-red-400 focus:border-red-400 focus:ring-red-400" : ""}
               />
-              {showError && validation.error && (
+              {showEmailError && validation.error && (
                 <p className="text-sm text-red-500">{validation.error}</p>
               )}
               {validation.suggestion && (
@@ -92,6 +315,7 @@ export function EmailCapture({ onSubmit }: EmailCaptureProps) {
                   {validation.suggestion}
                 </button>
               )}
+              {error && <p className="text-sm text-red-500">{error}</p>}
             </div>
 
             {/* Terms checkbox */}
@@ -125,10 +349,17 @@ export function EmailCapture({ onSubmit }: EmailCaptureProps) {
             <Button
               type="submit"
               size="lg"
-              disabled={!canSubmit}
+              disabled={!canSubmitEmail || isLoading}
               className="w-full"
             >
-              Continuar
+              {isLoading ? (
+                <>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  Enviando código...
+                </>
+              ) : (
+                "Continuar"
+              )}
             </Button>
           </form>
 

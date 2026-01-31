@@ -4,6 +4,33 @@ import { addWatermark } from "@/lib/watermark";
 export const runtime = "nodejs";
 
 /**
+ * Allowed hosts for download proxy (security whitelist)
+ */
+const ALLOWED_HOSTS = [
+  "genea-photos.s3.sa-east-1.amazonaws.com",
+  "genea-photos.s3.amazonaws.com",
+  "fal.media", // fal.ai CDN
+  "storage.googleapis.com", // if using GCS
+];
+
+/**
+ * Validates if a URL is from an allowed host
+ */
+function isAllowedUrl(url: string): boolean {
+  try {
+    const parsed = new URL(url);
+    // Only allow HTTPS
+    if (parsed.protocol !== "https:") {
+      return false;
+    }
+    // Check against whitelist
+    return ALLOWED_HOSTS.some(host => parsed.host === host || parsed.host.endsWith(`.${host}`));
+  } catch {
+    return false;
+  }
+}
+
+/**
  * GET /api/download?url=xxx&trial=true
  * Proxy download to avoid CORS issues with S3
  * Adds watermark if trial=true
@@ -16,8 +43,13 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: "URL não fornecida" }, { status: 400 });
   }
 
+  // Security: Validate URL against whitelist
+  if (!isAllowedUrl(url)) {
+    return NextResponse.json({ error: "URL não permitida" }, { status: 403 });
+  }
+
   try {
-    // Fetch the image from S3
+    // Fetch the image from allowed source
     const response = await fetch(url);
 
     if (!response.ok) {

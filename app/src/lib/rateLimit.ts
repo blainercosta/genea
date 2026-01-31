@@ -124,4 +124,13 @@ export const RATE_LIMITS = {
 
   // Refund: 3 per minute per IP
   refund: { limit: 3, windowMs: 60 * 1000 },
+
+  // Email: 5 per minute per IP
+  email: { limit: 5, windowMs: 60 * 1000 },
+
+  // Auth code: 3 per minute per IP (prevent brute force)
+  authCode: { limit: 3, windowMs: 60 * 1000 },
+
+  // Auth verify: 5 attempts per minute per IP
+  authVerify: { limit: 5, windowMs: 60 * 1000 },
 } as const;

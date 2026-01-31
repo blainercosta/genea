@@ -75,6 +75,23 @@ const adjustmentPromptMap: Record<string, string> = {
 };
 
 /**
+ * Sanitize user input for prompt injection prevention
+ * Removes potentially dangerous characters and limits length
+ */
+function sanitizePromptInput(input: string): string {
+  return input
+    // Remove control characters and special prompt markers
+    .replace(/[\x00-\x1F\x7F]/g, "")
+    // Remove potential prompt injection patterns
+    .replace(/\b(ignore|disregard|forget|override|system|assistant|user|human)\b/gi, "")
+    // Remove special characters that could be used for injection
+    .replace(/[<>{}[\]\\|`]/g, "")
+    // Limit length
+    .slice(0, 200)
+    .trim();
+}
+
+/**
  * Adjust a previously restored photo with specific modifications
  */
 export async function adjustPhoto(
@@ -98,7 +115,10 @@ export async function adjustPhoto(
   }
 
   if (customNote) {
-    prompt += adjustmentInstructions ? `. Also: ${customNote}` : customNote;
+    const sanitizedNote = sanitizePromptInput(customNote);
+    if (sanitizedNote) {
+      prompt += adjustmentInstructions ? `. Also: ${sanitizedNote}` : sanitizedNote;
+    }
   }
 
   // Add preservation instructions
