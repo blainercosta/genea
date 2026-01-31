@@ -30,10 +30,13 @@ export default function UploadPage() {
 
   // Track consumed credit for rollback on error
   const [creditConsumed, setCreditConsumed] = useState(false);
+  // Track if this upload was a trial (determined BEFORE consumeCredit)
+  const [wasTrialUpload, setWasTrialUpload] = useState(false);
 
   const { upload, isUploading, error } = useUpload({
     onSuccess: (url) => {
       const restorationId = `r_${Date.now()}`;
+      // Save isTrial in restoration record for watermark logic in result page
       createRestoration({
         id: restorationId,
         originalUrl: url,
@@ -41,13 +44,12 @@ export default function UploadPage() {
         status: "processing",
         createdAt: new Date().toISOString(),
         adjustments: [],
+        isTrial: wasTrialUpload,
       });
 
       // Credit already consumed in handleUpload BEFORE upload started
       analytics.uploadComplete(currentFile?.size || 0, currentFile?.type || "unknown");
-      // Pass trial flag (determined BEFORE consumeCredit was called)
-      const wasTrialAtStart = !isPaid;
-      router.push(`/processing?id=${restorationId}&url=${encodeURIComponent(url)}&trial=${wasTrialAtStart}`);
+      router.push(`/processing?id=${restorationId}&url=${encodeURIComponent(url)}&trial=${wasTrialUpload}`);
     },
     onError: (err) => {
       analytics.uploadError(typeof err === "string" ? err : "Unknown error");
@@ -79,6 +81,8 @@ export default function UploadPage() {
       return;
     }
     setCreditConsumed(true);
+    // Capture trial state BEFORE it changes (for watermark logic later)
+    setWasTrialUpload(!isPaid);
 
     setCurrentFile(file);
     analytics.uploadStart("gallery");

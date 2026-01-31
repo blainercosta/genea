@@ -9,33 +9,24 @@ import { analytics } from "@/lib/analytics";
 function ResultContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { user, isLoading, getRestoration, isTrial, credits, getLatestRestoration } = useUser();
+  const { isLoading, getRestoration, credits, getLatestRestoration } = useUser();
 
   const restorationId = searchParams.get("id");
   const originalUrlParam = searchParams.get("original");
   const restoredUrlParam = searchParams.get("restored");
 
-  // Get restoration data
+  // Get restoration data (including isTrial flag for watermark)
   const [restoration, setRestoration] = useState<{
     originalUrl: string;
     restoredUrl: string;
+    isTrial?: boolean;
   } | null>(null);
 
   useEffect(() => {
-    // First try query params (most reliable)
-    if (originalUrlParam && restoredUrlParam) {
-      setRestoration({
-        originalUrl: decodeURIComponent(originalUrlParam),
-        restoredUrl: decodeURIComponent(restoredUrlParam),
-      });
-      analytics.resultView(isTrial());
-      return;
-    }
-
     // Wait for user data to load
     if (isLoading) return;
 
-    // Try to get restoration from localStorage
+    // Try to get restoration from localStorage first (has isTrial flag)
     const data = restorationId
       ? getRestoration(restorationId)
       : getLatestRestoration();
@@ -44,26 +35,37 @@ function ResultContent() {
       setRestoration({
         originalUrl: data.originalUrl,
         restoredUrl: data.restoredUrl,
+        isTrial: data.isTrial,
       });
+      analytics.resultView(data.isTrial ?? false);
+      return;
     }
 
-    // Track result view
-    analytics.resultView(isTrial());
-  }, [restorationId, originalUrlParam, restoredUrlParam, getRestoration, getLatestRestoration, isTrial, isLoading]);
+    // Fallback to query params (for direct links)
+    if (originalUrlParam && restoredUrlParam) {
+      setRestoration({
+        originalUrl: decodeURIComponent(originalUrlParam),
+        restoredUrl: decodeURIComponent(restoredUrlParam),
+        // Assume trial if no restoration record found
+        isTrial: true,
+      });
+      analytics.resultView(true);
+    }
+  }, [restorationId, originalUrlParam, restoredUrlParam, getRestoration, getLatestRestoration, isLoading]);
 
-  const isPaid = !isTrial();
+  // Use restoration's isTrial flag (captured at upload time, before consumeCredit)
+  const isTrialRestoration = restoration?.isTrial ?? true;
+  const isPaid = !isTrialRestoration;
 
   const handleDownload = () => {
     if (!restoration?.restoredUrl) return;
 
-    const isTrialUser = isTrial();
-
     // Track download
-    analytics.downloadClick(isTrialUser);
+    analytics.downloadClick(isTrialRestoration);
 
     // Use proxy API to download (avoids CORS issues with S3)
     // Add trial param to apply watermark for trial users
-    const downloadUrl = `/api/download?url=${encodeURIComponent(restoration.restoredUrl)}${isTrialUser ? "&trial=true" : ""}`;
+    const downloadUrl = `/api/download?url=${encodeURIComponent(restoration.restoredUrl)}${isTrialRestoration ? "&trial=true" : ""}`;
 
     // Create download link
     const link = document.createElement("a");

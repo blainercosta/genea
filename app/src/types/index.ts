@@ -17,6 +17,7 @@ export interface Restoration {
   status: "processing" | "completed" | "failed";
   createdAt: string;
   adjustments: Adjustment[];
+  isTrial?: boolean; // Whether this restoration was made with trial (for watermark)
 }
 
 // Adjustment request for a restoration
