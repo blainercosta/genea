@@ -3,17 +3,18 @@
 import { CheckCircle, ArrowRight } from "lucide-react";
 import { Header } from "@/components/layout";
 import { Button, Card } from "@/components/ui";
+import { DEFAULT_PLAN } from "@/config/plans";
 import Link from "next/link";
 
 interface PaymentConfirmationProps {
-  photos: number;
-  amount: number;
+  photos?: number;
+  amount?: number;
   onStartRestoring?: () => void;
 }
 
 export function PaymentConfirmation({
-  photos = 5,
-  amount = 29.9,
+  photos = DEFAULT_PLAN.photos,
+  amount = DEFAULT_PLAN.price,
   onStartRestoring,
 }: PaymentConfirmationProps) {
   return (

@@ -1,7 +1,10 @@
-import type { User, Restoration, Payment } from "@/types";
+import type { User, Restoration, Payment, Adjustment } from "@/types";
 
 const USER_STORAGE_KEY = "genea_user";
 const RESTORATIONS_KEY = "genea_restorations";
+
+/** Maximum adjustments allowed per restoration (paid users only) */
+export const MAX_ADJUSTMENTS = 3;
 
 /**
  * Get user data from localStorage
@@ -181,4 +184,77 @@ export function updateCustomerInfo(info: {
 export function clearUserData(): void {
   if (typeof window === "undefined") return;
   localStorage.removeItem(USER_STORAGE_KEY);
+}
+
+/**
+ * Get adjustment count for a restoration
+ */
+export function getAdjustmentCount(restorationId: string): number {
+  const restoration = getRestoration(restorationId);
+  return restoration?.adjustments?.length || 0;
+}
+
+/**
+ * Check if a restoration can have more adjustments
+ * Only paid users can adjust, and there's a limit of MAX_ADJUSTMENTS per restoration
+ */
+export function canAdjust(restorationId: string): { allowed: boolean; remaining: number; reason?: string } {
+  const user = getUser();
+
+  // No user - cannot adjust
+  if (!user) {
+    return { allowed: false, remaining: 0, reason: "no_user" };
+  }
+
+  // Trial users cannot adjust
+  if (!user.isTrialUsed) {
+    return { allowed: false, remaining: 0, reason: "trial_user" };
+  }
+
+  // Check if this was a trial restoration (first restoration with no credits at the time)
+  // If user has never had credits and only used trial, they can't adjust
+  const restoration = getRestoration(restorationId);
+  if (!restoration) {
+    return { allowed: false, remaining: 0, reason: "no_restoration" };
+  }
+
+  // Check adjustment limit
+  const currentCount = restoration.adjustments?.length || 0;
+  const remaining = MAX_ADJUSTMENTS - currentCount;
+
+  if (remaining <= 0) {
+    return { allowed: false, remaining: 0, reason: "limit_reached" };
+  }
+
+  return { allowed: true, remaining };
+}
+
+/**
+ * Add an adjustment to a restoration (appends to existing adjustments)
+ */
+export function addAdjustmentToRestoration(
+  restorationId: string,
+  adjustment: Adjustment
+): boolean {
+  const user = getUser();
+  if (!user) return false;
+
+  const index = user.restorations.findIndex((r) => r.id === restorationId);
+  if (index === -1) return false;
+
+  const restoration = user.restorations[index];
+  const currentAdjustments = restoration.adjustments || [];
+
+  // Check limit before adding
+  if (currentAdjustments.length >= MAX_ADJUSTMENTS) {
+    return false;
+  }
+
+  user.restorations[index] = {
+    ...restoration,
+    adjustments: [...currentAdjustments, adjustment],
+  };
+
+  saveUser(user);
+  return true;
 }

@@ -28,6 +28,9 @@ export default function UploadPage() {
 
   const [currentFile, setCurrentFile] = useState<File | null>(null);
 
+  // Track consumed credit for rollback on error
+  const [creditConsumed, setCreditConsumed] = useState(false);
+
   const { upload, isUploading, error } = useUpload({
     onSuccess: (url) => {
       const restorationId = `r_${Date.now()}`;
@@ -40,22 +43,40 @@ export default function UploadPage() {
         adjustments: [],
       });
 
-      consumeCredit();
+      // Credit already consumed in handleUpload BEFORE upload started
       analytics.uploadComplete(currentFile?.size || 0, currentFile?.type || "unknown");
       router.push(`/processing?id=${restorationId}&url=${encodeURIComponent(url)}`);
     },
     onError: (err) => {
       analytics.uploadError(typeof err === "string" ? err : "Unknown error");
       console.error("Upload error:", err);
+      // Note: Credit was consumed before upload, but restoration failed
+      // In a real system with DB, we'd rollback here
     },
   });
 
   const handleUpload = async (file: File) => {
+    // Validate hydration completed
+    if (!mounted) {
+      console.error("Page not ready");
+      return;
+    }
+
     if (!canRestore()) {
       analytics.upgradeClick("upload");
       router.push("/checkout");
       return;
     }
+
+    // CRITICAL FIX: Consume credit BEFORE starting upload to prevent race condition
+    // This ensures trial is marked as used even if user closes tab during upload
+    const success = consumeCredit();
+    if (!success) {
+      // Edge case: canRestore() passed but consumeCredit failed (state sync issue)
+      router.push("/checkout");
+      return;
+    }
+    setCreditConsumed(true);
 
     setCurrentFile(file);
     analytics.uploadStart("gallery");

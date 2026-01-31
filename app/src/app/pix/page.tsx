@@ -102,10 +102,48 @@ function PixContent() {
     generatePix();
   }, [planId, router]);
 
-  const handlePaymentConfirmed = () => {
-    if (planData) {
+  // Payment confirmed via polling (API checked status with Abacate Pay)
+  // This is called when API returns COMPLETED status from Abacate Pay
+  const handlePaymentConfirmed = async () => {
+    if (!planData || !pixData) return;
+
+    // Double-check: Verify payment status one more time before adding credits
+    try {
+      const response = await fetch(`/api/payment/pix?id=${pixData.id}`);
+      const data = await response.json();
+
+      // Only add credits if status is truly COMPLETED
+      if (data.status !== "COMPLETED") {
+        console.error("Payment status mismatch:", data.status);
+        setError("Status de pagamento não confirmado. Aguarde ou entre em contato.");
+        return;
+      }
+
+      // Validate amount matches plan (prevent manipulation)
+      if (data.amount !== planData.price) {
+        console.error("Amount mismatch:", data.amount, "vs", planData.price);
+        setError("Valor do pagamento não confere. Entre em contato com suporte.");
+        return;
+      }
+
+      // All validations passed - add credits
       analytics.paymentComplete(planData.id, planData.price, "pix");
       addCredits(planData.photos);
+
+      // Store payment record in localStorage for audit trail
+      const user = getUser();
+      if (user) {
+        const payments = JSON.parse(localStorage.getItem("genea_payments") || "[]");
+        payments.push({
+          pixId: pixData.id,
+          planId: planData.id,
+          photos: planData.photos,
+          amount: planData.price,
+          email: user.email,
+          confirmedAt: new Date().toISOString(),
+        });
+        localStorage.setItem("genea_payments", JSON.stringify(payments));
+      }
 
       const params = new URLSearchParams({
         photos: planData.photos.toString(),
@@ -113,6 +151,9 @@ function PixContent() {
         plan: planData.name,
       });
       router.push(`/payment-confirmed?${params.toString()}`);
+    } catch (err) {
+      console.error("Error verifying payment:", err);
+      setError("Erro ao verificar pagamento. Tente novamente.");
     }
   };
 

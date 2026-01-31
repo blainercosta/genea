@@ -1,14 +1,16 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { Header } from "@/components/layout";
-import { Button, Input, Card } from "@/components/ui";
-import { AlertCircle } from "lucide-react";
-import Link from "next/link";
+import { Button, Input, Card, Modal } from "@/components/ui";
+import { AlertCircle, AlertTriangle } from "lucide-react";
 
 interface RequestRefundProps {
   onSubmit?: (reason: string, details: string, pixKey: string) => void;
   onCancel?: () => void;
+  error?: string;
+  isSubmitting?: boolean;
 }
 
 const refundReasons = [
@@ -19,10 +21,12 @@ const refundReasons = [
   "Outro motivo",
 ];
 
-export function RequestRefund({ onSubmit, onCancel }: RequestRefundProps) {
+export function RequestRefund({ onSubmit, onCancel, error, isSubmitting }: RequestRefundProps) {
+  const router = useRouter();
   const [selectedReason, setSelectedReason] = useState("");
   const [details, setDetails] = useState("");
   const [pixKey, setPixKey] = useState("");
+  const [showCancelModal, setShowCancelModal] = useState(false);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -30,6 +34,22 @@ export function RequestRefund({ onSubmit, onCancel }: RequestRefundProps) {
   };
 
   const isValid = selectedReason && pixKey;
+  const hasFormData = selectedReason || details || pixKey;
+
+  const handleCancelClick = () => {
+    if (hasFormData) {
+      // Show confirmation modal if user has entered data
+      setShowCancelModal(true);
+    } else {
+      // Navigate directly if no data entered
+      handleConfirmCancel();
+    }
+  };
+
+  const handleConfirmCancel = () => {
+    onCancel?.();
+    router.push("/");
+  };
 
   return (
     <div className="min-h-screen bg-ih-bg flex flex-col">
@@ -103,16 +123,21 @@ export function RequestRefund({ onSubmit, onCancel }: RequestRefundProps) {
               </p>
             </div>
 
+            {/* Error message */}
+            {error && (
+              <div className="bg-red-50 border border-red-200 rounded-xl p-4 text-center">
+                <p className="text-sm text-red-600">{error}</p>
+              </div>
+            )}
+
             {/* Buttons */}
             <div className="flex flex-col gap-3">
-              <Button type="submit" disabled={!isValid} className="w-full" size="lg">
-                Solicitar reembolso
+              <Button type="submit" disabled={!isValid || isSubmitting} className="w-full" size="lg">
+                {isSubmitting ? "Processando..." : "Solicitar reembolso"}
               </Button>
-              <Link href="/" className="w-full">
-                <Button type="button" variant="ghost" onClick={onCancel} className="w-full">
-                  Cancelar
-                </Button>
-              </Link>
+              <Button type="button" variant="ghost" onClick={handleCancelClick} className="w-full">
+                Cancelar
+              </Button>
             </div>
 
             {/* Policy note */}
@@ -125,6 +150,38 @@ export function RequestRefund({ onSubmit, onCancel }: RequestRefundProps) {
           </form>
         </Card>
       </main>
+
+      {/* Cancel confirmation modal */}
+      <Modal
+        isOpen={showCancelModal}
+        onClose={() => setShowCancelModal(false)}
+        title="Cancelar solicitação?"
+      >
+        <div className="flex flex-col items-center gap-4 py-4">
+          <div className="w-12 h-12 rounded-full bg-amber-100 flex items-center justify-center">
+            <AlertTriangle className="w-6 h-6 text-amber-600" />
+          </div>
+          <p className="text-center text-ih-text-secondary">
+            Você tem dados preenchidos no formulário. Se cancelar agora, essas informações serão perdidas.
+          </p>
+          <div className="flex gap-3 w-full mt-2">
+            <Button
+              variant="secondary"
+              onClick={() => setShowCancelModal(false)}
+              className="flex-1"
+            >
+              Continuar editando
+            </Button>
+            <Button
+              variant="ghost"
+              onClick={handleConfirmCancel}
+              className="flex-1 text-red-600 hover:bg-red-50"
+            >
+              Sim, cancelar
+            </Button>
+          </div>
+        </div>
+      </Modal>
     </div>
   );
 }

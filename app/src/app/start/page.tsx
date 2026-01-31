@@ -30,10 +30,19 @@ function StartContent() {
     analytics.startPageView();
   }, []);
 
-  const handleSubmit = (email: string) => {
+  const handleSubmit = async (email: string) => {
     initialize(email);
     identify(email);
     analytics.emailSubmit(email);
+
+    // Send welcome email (fire and forget)
+    fetch("/api/email", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ to: email, type: "welcome" }),
+    }).catch(() => {
+      // Ignore email errors - not critical
+    });
 
     // If plan is specified, go to customer info to collect data for PIX
     if (planId) {

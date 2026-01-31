@@ -77,3 +77,15 @@ export const PLANS_MAP = PLANS.reduce(
 export function formatPrice(price: number): string {
   return `R$ ${price.toFixed(2).replace(".", ",")}`;
 }
+
+/**
+ * Get the default (popular) plan - used for fallback values
+ */
+export function getDefaultPlan(): PricingPlan {
+  return PLANS.find((plan) => plan.popular) || PLANS[1];
+}
+
+/**
+ * Default plan values for quick access
+ */
+export const DEFAULT_PLAN = getDefaultPlan();

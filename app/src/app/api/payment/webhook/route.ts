@@ -5,6 +5,7 @@ import {
   type AbacateWebhookEvent,
 } from "@/lib/abacate";
 import { getPlanById } from "@/config/plans";
+import { sendPaymentConfirmedEmail, sendRefundProcessedEmail, isResendConfigured } from "@/lib/resend";
 
 /**
  * POST /api/payment/webhook
@@ -59,9 +60,9 @@ async function handleAbacateWebhook(
   body: string,
   signature: string | null
 ): Promise<NextResponse> {
-  // Valida assinatura se configurada
-  if (signature && !validateWebhookSignature(body, signature)) {
-    console.error("Assinatura de webhook inválida");
+  // SECURITY: Always validate webhook signature
+  if (!validateWebhookSignature(body, signature)) {
+    console.error("Webhook signature validation failed");
     return NextResponse.json(
       { error: "Assinatura inválida" },
       { status: 401 }
@@ -80,10 +81,20 @@ async function handleAbacateWebhook(
     );
   }
 
+  // Validate required fields
+  if (!event.event || !event.data?.id) {
+    console.error("Webhook missing required fields:", event);
+    return NextResponse.json(
+      { error: "Campos obrigatórios ausentes" },
+      { status: 400 }
+    );
+  }
+
   console.log("Webhook Abacate Pay recebido:", {
     event: event.event,
     id: event.data.id,
     status: event.data.status,
+    amount: event.data.amount,
   });
 
   // Processa baseado no tipo de evento
@@ -97,7 +108,7 @@ async function handleAbacateWebhook(
       break;
 
     case "BILLING_REFUNDED":
-      console.log("Reembolso processado:", event.data.id);
+      await handleRefund(event);
       break;
 
     default:
@@ -113,8 +124,9 @@ async function handleAbacateWebhook(
  * NOTA: Como não há banco de dados, os créditos são gerenciados
  * via localStorage no cliente. O webhook serve para:
  * 1. Logging/auditoria
- * 2. Envio de email de confirmação (quando Resend estiver integrado)
- * 3. Possível integração futura com banco de dados
+ * 2. Envio de email de confirmação
+ * 3. Validação de integridade do pagamento
+ * 4. Possível integração futura com banco de dados
  */
 async function handlePaymentConfirmed(event: AbacateWebhookEvent) {
   const { metadata } = event.data;
@@ -122,33 +134,110 @@ async function handlePaymentConfirmed(event: AbacateWebhookEvent) {
   const planId = metadata?.planId;
   const email = metadata?.email;
   const photos = metadata?.photos;
+  const name = metadata?.name;
+
+  const amountInReais = event.data.amount / 100;
 
   console.log("Pagamento confirmado:", {
     pixId: event.data.id,
-    amount: event.data.amount / 100, // centavos -> reais
+    amount: amountInReais,
     planId,
     email,
     photos,
   });
 
-  // Busca dados do plano para log
-  if (planId) {
-    const plan = getPlanById(planId);
-    if (plan) {
-      console.log("Plano adquirido:", {
-        name: plan.name,
-        photos: plan.photos,
-        price: plan.price,
-      });
-    }
+  // SECURITY: Validate metadata exists
+  if (!planId || !email) {
+    console.error("SECURITY WARNING: Payment missing required metadata", {
+      pixId: event.data.id,
+      planId,
+      email,
+    });
+    // Still process (payment was made) but log for investigation
   }
 
-  // TODO: Enviar email de confirmação via Resend
-  // if (email) {
-  //   await sendEmail({
-  //     to: email,
-  //     template: "payment_confirmed",
-  //     data: { photos, amount: event.data.amount / 100 },
-  //   });
-  // }
+  // Busca dados do plano
+  const plan = planId ? getPlanById(planId) : null;
+
+  // SECURITY: Validate amount matches plan price
+  if (plan) {
+    const expectedAmount = plan.price;
+    const tolerance = 0.01; // Allow 1 cent tolerance for rounding
+
+    if (Math.abs(amountInReais - expectedAmount) > tolerance) {
+      console.error("SECURITY WARNING: Payment amount mismatch!", {
+        pixId: event.data.id,
+        receivedAmount: amountInReais,
+        expectedAmount,
+        planId,
+        email,
+      });
+      // Log but still process - payment was made, investigate later
+    }
+
+    console.log("Plano adquirido:", {
+      name: plan.name,
+      photos: plan.photos,
+      price: plan.price,
+      amountPaid: amountInReais,
+      validated: Math.abs(amountInReais - expectedAmount) <= tolerance,
+    });
+  } else if (planId) {
+    console.error("SECURITY WARNING: Unknown planId in webhook", {
+      pixId: event.data.id,
+      planId,
+    });
+  }
+
+  // Envia email de confirmação
+  if (email && isResendConfigured()) {
+    try {
+      const result = await sendPaymentConfirmedEmail(
+        email,
+        plan?.name || `${photos} fotos`,
+        plan?.photos || parseInt(photos || "0"),
+        amountInReais,
+        name
+      );
+
+      if (result.success) {
+        console.log("Email de confirmação enviado:", result.id);
+      } else {
+        console.error("Erro ao enviar email de confirmação:", result.error);
+      }
+    } catch (error) {
+      console.error("Falha ao enviar email de confirmação:", error);
+    }
+  }
+}
+
+/**
+ * Processa reembolso
+ */
+async function handleRefund(event: AbacateWebhookEvent) {
+  const { metadata } = event.data;
+  const email = metadata?.email;
+  const name = metadata?.name;
+  const amountInReais = event.data.amount / 100;
+
+  console.log("Reembolso processado:", {
+    pixId: event.data.id,
+    amount: amountInReais,
+    email,
+  });
+
+  // Envia email de reembolso
+  if (email && isResendConfigured()) {
+    try {
+      const result = await sendRefundProcessedEmail(email, amountInReais, name);
+
+      if (result.success) {
+        console.log("Email de reembolso enviado:", result.id);
+      } else {
+        console.error("Erro ao enviar email de reembolso:", result.error);
+      }
+    } catch (error) {
+      console.error("Falha ao enviar email de reembolso:", error);
+    }
+  }
 }

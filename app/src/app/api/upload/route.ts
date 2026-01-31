@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { writeFile, mkdir } from "fs/promises";
 import path from "path";
+import { checkRateLimit, RATE_LIMITS } from "@/lib/rateLimit";
 
 export const runtime = "nodejs";
 
@@ -9,6 +10,10 @@ const MAX_FILE_SIZE = 20 * 1024 * 1024;
 const ALLOWED_TYPES = ["image/jpeg", "image/png", "image/heic", "image/heif"];
 
 export async function POST(request: NextRequest) {
+  // Check rate limit
+  const rateLimitResponse = checkRateLimit(request, "upload", RATE_LIMITS.upload);
+  if (rateLimitResponse) return rateLimitResponse;
+
   try {
     const formData = await request.formData();
     const file = formData.get("file") as File | null;

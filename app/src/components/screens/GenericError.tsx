@@ -57,7 +57,7 @@ export function GenericError({
             <span>
               Problema continua?{" "}
               <a
-                href="mailto:contato@genea.com.br"
+                href="mailto:contato@genea.cc"
                 className="text-genea-green hover:underline font-medium"
               >
                 Fale com a gente

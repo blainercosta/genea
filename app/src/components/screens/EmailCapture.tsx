@@ -1,10 +1,11 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { Mail } from "lucide-react";
 import { Header } from "@/components/layout";
 import { Button, Input, Card, Modal } from "@/components/ui";
 import { TermsContent, PrivacyContent } from "@/components/legal";
+import { validateEmail } from "@/lib/validation";
 
 interface EmailCaptureProps {
   onSubmit?: (email: string) => void;
@@ -15,16 +16,38 @@ export function EmailCapture({ onSubmit }: EmailCaptureProps) {
   const [acceptedTerms, setAcceptedTerms] = useState(false);
   const [showTerms, setShowTerms] = useState(false);
   const [showPrivacy, setShowPrivacy] = useState(false);
+  const [touched, setTouched] = useState(false);
+
+  // Validate email with comprehensive checks
+  const validation = useMemo(() => validateEmail(email), [email]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (email && acceptedTerms && onSubmit) {
-      onSubmit(email);
+    setTouched(true);
+    if (validation.isValid && acceptedTerms && onSubmit) {
+      onSubmit(email.trim().toLowerCase());
     }
   };
 
-  const isValidEmail = email.includes("@") && email.includes(".");
-  const canSubmit = isValidEmail && acceptedTerms;
+  const handleEmailChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setEmail(e.target.value);
+    if (!touched && e.target.value.length > 0) {
+      setTouched(true);
+    }
+  };
+
+  const handleSuggestionClick = () => {
+    if (validation.suggestion) {
+      // Extract email from suggestion "Você quis dizer xxx?"
+      const match = validation.suggestion.match(/(\S+@\S+\.\S+)/);
+      if (match) {
+        setEmail(match[1]);
+      }
+    }
+  };
+
+  const canSubmit = validation.isValid && acceptedTerms;
+  const showError = touched && email.length > 0 && !validation.isValid;
 
   return (
     <div className="min-h-screen bg-ih-bg flex flex-col">
@@ -49,12 +72,27 @@ export function EmailCapture({ onSubmit }: EmailCaptureProps) {
 
           {/* Form */}
           <form onSubmit={handleSubmit} className="w-full flex flex-col gap-5">
-            <Input
-              type="email"
-              placeholder="seu@email.com"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-            />
+            <div className="flex flex-col gap-1">
+              <Input
+                type="email"
+                placeholder="seu@email.com"
+                value={email}
+                onChange={handleEmailChange}
+                className={showError ? "border-red-400 focus:border-red-400 focus:ring-red-400" : ""}
+              />
+              {showError && validation.error && (
+                <p className="text-sm text-red-500">{validation.error}</p>
+              )}
+              {validation.suggestion && (
+                <button
+                  type="button"
+                  onClick={handleSuggestionClick}
+                  className="text-sm text-genea-green hover:underline text-left"
+                >
+                  {validation.suggestion}
+                </button>
+              )}
+            </div>
 
             {/* Terms checkbox */}
             <label className="flex items-start gap-3 cursor-pointer">

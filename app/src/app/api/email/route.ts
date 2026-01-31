@@ -6,6 +6,7 @@ import {
   sendPaymentConfirmedEmail,
   sendRefundProcessedEmail,
 } from "@/lib/resend";
+import { isValidEmail } from "@/lib/validation";
 
 /**
  * POST /api/email
@@ -67,8 +68,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Validate email format
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(to)) {
+    if (!isValidEmail(to)) {
       return NextResponse.json({ error: "Invalid email" }, { status: 400 });
     }
 

@@ -1,7 +1,7 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
-import { Copy, Check, Clock, QrCode, AlertCircle } from "lucide-react";
+import { useState, useEffect, useCallback, useRef } from "react";
+import { Copy, Check, Clock, QrCode, AlertCircle, Loader2, RefreshCw } from "lucide-react";
 import { Header } from "@/components/layout";
 import { Button } from "@/components/ui";
 import { cn } from "@/lib/utils";
@@ -40,9 +40,11 @@ export function PixPayment({
 }: PixPaymentProps) {
   const [copied, setCopied] = useState(false);
   const [timeLeft, setTimeLeft] = useState<number>(0);
-  const [status, setStatus] = useState<"pending" | "checking" | "expired">(
-    "pending"
-  );
+  const [status, setStatus] = useState<"pending" | "expired">("pending");
+  const [isChecking, setIsChecking] = useState(false);
+  const [checkCount, setCheckCount] = useState(0);
+  const [lastCheckTime, setLastCheckTime] = useState<number | null>(null);
+  const checkCountRef = useRef(0);
 
   // Calcula tempo restante
   useEffect(() => {
@@ -67,25 +69,45 @@ export function PixPayment({
 
   // Poll para verificar status do pagamento
   const checkPaymentStatus = useCallback(async () => {
+    if (isChecking) return;
+
+    setIsChecking(true);
     try {
       const response = await fetch(`/api/payment/pix?id=${pix.id}`);
       const data = await response.json();
+
+      checkCountRef.current += 1;
+      setCheckCount(checkCountRef.current);
+      setLastCheckTime(Date.now());
 
       if (data.status === "COMPLETED") {
         onPaymentConfirmed();
       }
     } catch (error) {
       console.error("Erro ao verificar pagamento:", error);
+    } finally {
+      setIsChecking(false);
     }
-  }, [pix.id, onPaymentConfirmed]);
+  }, [pix.id, onPaymentConfirmed, isChecking]);
 
   // Polling a cada 3 segundos
   useEffect(() => {
     if (status === "expired") return;
 
+    // Check immediately on mount
+    checkPaymentStatus();
+
     const interval = setInterval(checkPaymentStatus, 3000);
     return () => clearInterval(interval);
-  }, [status, checkPaymentStatus]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [status]); // checkPaymentStatus omitted to avoid infinite loop
+
+  // Manual check button
+  const handleManualCheck = () => {
+    if (!isChecking) {
+      checkPaymentStatus();
+    }
+  };
 
   const handleCopy = async () => {
     try {
@@ -209,9 +231,37 @@ export function PixPayment({
         </div>
 
         {/* Status */}
-        <div className="flex items-center gap-2 text-ih-text-secondary">
-          <div className="w-2 h-2 bg-genea-green rounded-full animate-pulse" />
-          <span className="text-sm">Aguardando pagamento...</span>
+        <div className="flex flex-col items-center gap-3">
+          <div className="flex items-center gap-2 text-ih-text-secondary">
+            {isChecking ? (
+              <Loader2 className="w-4 h-4 text-genea-green animate-spin" />
+            ) : (
+              <div className="w-2 h-2 bg-genea-green rounded-full animate-pulse" />
+            )}
+            <span className="text-sm">
+              {isChecking ? "Verificando pagamento..." : "Aguardando pagamento..."}
+            </span>
+          </div>
+
+          {/* Check count and manual refresh */}
+          <div className="flex items-center gap-3 text-xs text-ih-text-muted">
+            {checkCount > 0 && (
+              <span>Verificado {checkCount}x</span>
+            )}
+            <button
+              onClick={handleManualCheck}
+              disabled={isChecking}
+              className={cn(
+                "flex items-center gap-1 px-2 py-1 rounded-lg transition-colors",
+                isChecking
+                  ? "opacity-50 cursor-not-allowed"
+                  : "hover:bg-ih-surface hover:text-ih-text"
+              )}
+            >
+              <RefreshCw className={cn("w-3 h-3", isChecking && "animate-spin")} />
+              <span>Verificar agora</span>
+            </button>
+          </div>
         </div>
 
         {/* Cancel */}

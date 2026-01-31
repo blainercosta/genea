@@ -10,6 +10,8 @@ import Link from "next/link";
 interface RequestAdjustmentProps {
   photoUrl?: string;
   credits?: number;
+  remainingAdjustments?: number;
+  maxAdjustments?: number;
   onSubmit?: (adjustments: string[], customNote: string) => void;
   onCancel?: () => void;
 }
@@ -28,6 +30,8 @@ const adjustmentOptions = [
 export function RequestAdjustment({
   photoUrl,
   credits = 2,
+  remainingAdjustments = 3,
+  maxAdjustments = 3,
   onSubmit,
   onCancel,
 }: RequestAdjustmentProps) {
@@ -131,9 +135,13 @@ export function RequestAdjustment({
               Enviar pedido de ajuste
             </Button>
 
-            {/* Guarantee note */}
+            {/* Remaining adjustments note */}
             <p className="text-sm text-ih-text-muted text-center">
-              Ajustes são ilimitados até você aprovar. <span className="text-genea-green font-medium">Sem custo extra.</span>
+              {remainingAdjustments === 1 ? (
+                <>Este é seu <span className="text-genea-amber font-medium">último ajuste</span> para esta foto.</>
+              ) : (
+                <>Você tem <span className="text-genea-green font-medium">{remainingAdjustments} ajustes</span> restantes para esta foto.</>
+              )}
             </p>
 
             {/* Cancel link */}

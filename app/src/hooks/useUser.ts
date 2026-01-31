@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import type { User, Restoration } from "@/types";
+import type { User, Restoration, Adjustment } from "@/types";
 import {
   getUser,
   saveUser,
@@ -16,6 +16,9 @@ import {
   getRestoration,
   getLatestRestoration,
   clearUserData,
+  canAdjust as canAdjustFromStorage,
+  addAdjustmentToRestoration,
+  MAX_ADJUSTMENTS,
 } from "@/lib/storage";
 
 export function useUser() {
@@ -96,6 +99,23 @@ export function useUser() {
     setUser(null);
   }, []);
 
+  // Check if user can adjust a specific restoration
+  const checkCanAdjust = useCallback((restorationId: string) => {
+    return canAdjustFromStorage(restorationId);
+  }, []);
+
+  // Add an adjustment to a restoration
+  const addAdjustment = useCallback(
+    (restorationId: string, adjustment: Adjustment) => {
+      const success = addAdjustmentToRestoration(restorationId, adjustment);
+      if (success) {
+        setUser(getUser());
+      }
+      return success;
+    },
+    []
+  );
+
   return {
     user,
     isLoading,
@@ -110,5 +130,8 @@ export function useUser() {
     getRestoration: getUserRestoration,
     getLatestRestoration: getLatest,
     clearData,
+    canAdjust: checkCanAdjust,
+    addAdjustment,
+    MAX_ADJUSTMENTS,
   };
 }

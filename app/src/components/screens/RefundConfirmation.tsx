@@ -3,6 +3,7 @@
 import { CheckCircle, Clock } from "lucide-react";
 import { Button, Card } from "@/components/ui";
 import { Header } from "@/components/layout";
+import { DEFAULT_PLAN } from "@/config/plans";
 import Link from "next/link";
 
 interface RefundConfirmationProps {
@@ -11,7 +12,7 @@ interface RefundConfirmationProps {
 }
 
 export function RefundConfirmation({
-  amount = 29.9,
+  amount = DEFAULT_PLAN.price,
   pixKey = "***@email.com",
 }: RefundConfirmationProps) {
   return (
@@ -63,8 +64,8 @@ export function RefundConfirmation({
           {/* Contact note */}
           <p className="text-sm text-ih-text-muted text-center">
             Qualquer dúvida, fale com a gente em{" "}
-            <a href="mailto:contato@genea.com.br" className="text-genea-green hover:underline">
-              contato@genea.com.br
+            <a href="mailto:contato@genea.cc" className="text-genea-green hover:underline">
+              contato@genea.cc
             </a>
           </p>
         </div>

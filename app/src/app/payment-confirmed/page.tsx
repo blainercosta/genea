@@ -3,6 +3,7 @@
 import { useEffect, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { PaymentConfirmation } from "@/components/screens";
+import { DEFAULT_PLAN } from "@/config/plans";
 import { analytics } from "@/lib/analytics";
 
 function PaymentConfirmedContent() {
@@ -10,8 +11,8 @@ function PaymentConfirmedContent() {
   const searchParams = useSearchParams();
 
   // Lê dados do plano da URL (passados pelo checkout)
-  const photos = Number(searchParams.get("photos")) || 5;
-  const amount = Number(searchParams.get("amount")) || 29.9;
+  const photos = Number(searchParams.get("photos")) || DEFAULT_PLAN.photos;
+  const amount = Number(searchParams.get("amount")) || DEFAULT_PLAN.price;
 
   useEffect(() => {
     analytics.paymentConfirmationView(photos, amount);
@@ -32,7 +33,7 @@ function PaymentConfirmedContent() {
 
 export default function PaymentConfirmedPage() {
   return (
-    <Suspense fallback={<PaymentConfirmation photos={5} amount={29.9} onStartRestoring={() => {}} />}>
+    <Suspense fallback={<PaymentConfirmation />}>
       <PaymentConfirmedContent />
     </Suspense>
   );

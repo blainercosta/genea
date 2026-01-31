@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { adjustPhoto } from "@/lib/fal";
 import { uploadToS3 } from "@/lib/s3";
+import { checkRateLimit, RATE_LIMITS } from "@/lib/rateLimit";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
@@ -10,6 +11,10 @@ export const maxDuration = 60;
  * Apply adjustments to a restored photo
  */
 export async function POST(request: NextRequest) {
+  // Check rate limit
+  const rateLimitResponse = checkRateLimit(request, "adjust", RATE_LIMITS.adjust);
+  if (rateLimitResponse) return rateLimitResponse;
+
   try {
     const body = await request.json();
     const { imageUrl, adjustments, customNote } = body;

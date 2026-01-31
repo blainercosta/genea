@@ -5,6 +5,8 @@ import {
   getPixStatus,
   isAbacateConfigured,
 } from "@/lib/abacate";
+import { checkRateLimit, RATE_LIMITS } from "@/lib/rateLimit";
+import { isValidEmail, isValidCPF, isValidPhone } from "@/lib/validation";
 
 /**
  * POST /api/payment/pix
@@ -22,6 +24,10 @@ import {
  * - plan: Dados do plano selecionado
  */
 export async function POST(request: NextRequest) {
+  // Check rate limit
+  const rateLimitResponse = checkRateLimit(request, "pix", RATE_LIMITS.pix);
+  if (rateLimitResponse) return rateLimitResponse;
+
   try {
     // Verifica se a integração está configurada
     if (!isAbacateConfigured()) {
@@ -45,10 +51,19 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Validação básica de email
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(email)) {
+    // Validação robusta de email
+    if (!isValidEmail(email)) {
       return NextResponse.json({ error: "Email inválido" }, { status: 400 });
+    }
+
+    // Validação de CPF
+    if (!isValidCPF(taxId)) {
+      return NextResponse.json({ error: "CPF inválido" }, { status: 400 });
+    }
+
+    // Validação de telefone
+    if (!isValidPhone(phone)) {
+      return NextResponse.json({ error: "Telefone inválido" }, { status: 400 });
     }
 
     // Busca o plano
@@ -69,6 +84,7 @@ export async function POST(request: NextRequest) {
         planId: plan.id,
         photos: plan.photos.toString(),
         email,
+        name,
       }
     );
 

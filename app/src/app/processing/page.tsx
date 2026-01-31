@@ -9,7 +9,7 @@ import { analytics } from "@/lib/analytics";
 function ProcessingContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { updateRestoration } = useUser();
+  const { user, updateRestoration, addAdjustment } = useUser();
   const startTimeRef = useRef<number>(Date.now());
   const hasStartedRef = useRef(false);
 
@@ -39,6 +39,22 @@ function ProcessingContent() {
         });
       }
 
+      // Send restoration complete email (fire and forget)
+      if (user?.email) {
+        const resultUrl = `${window.location.origin}/result?id=${restorationId}&restored=${encodeURIComponent(url)}`;
+        fetch("/api/email", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            to: user.email,
+            type: "restoration_complete",
+            data: { restorationUrl: resultUrl, name: user.name },
+          }),
+        }).catch(() => {
+          // Ignore email errors
+        });
+      }
+
       const originalUrl = imageUrl ? decodeURIComponent(imageUrl) : "";
       router.push(`/result?id=${restorationId}&original=${encodeURIComponent(originalUrl)}&restored=${encodeURIComponent(url)}`);
     },
@@ -61,7 +77,7 @@ function ProcessingContent() {
       analytics.processingComplete(durationSeconds);
 
       if (restorationId) {
-        // Create a proper Adjustment record
+        // Create a proper Adjustment record and append to existing adjustments
         const decodedNote = customNote ? decodeURIComponent(customNote) : "";
         const adjustmentRecord = {
           id: `adj_${Date.now()}`,
@@ -70,10 +86,13 @@ function ProcessingContent() {
           createdAt: new Date().toISOString(),
         };
 
+        // Use addAdjustment to append (respects MAX_ADJUSTMENTS limit)
+        addAdjustment(restorationId, adjustmentRecord);
+
+        // Update the restored URL to the new adjusted version
         updateRestoration(restorationId, {
           status: "completed",
           restoredUrl: url,
-          adjustments: [adjustmentRecord],
         });
       }
 

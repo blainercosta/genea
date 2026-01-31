@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { restorePhoto } from "@/lib/fal";
 import { uploadToS3 } from "@/lib/s3";
+import { checkRateLimit, RATE_LIMITS } from "@/lib/rateLimit";
 
 export const runtime = "nodejs";
 export const maxDuration = 60; // Allow up to 60 seconds for restoration
@@ -10,6 +11,10 @@ export const maxDuration = 60; // Allow up to 60 seconds for restoration
  * Restore a photo synchronously and save to S3
  */
 export async function POST(request: NextRequest) {
+  // Check rate limit
+  const rateLimitResponse = checkRateLimit(request, "restore", RATE_LIMITS.restore);
+  if (rateLimitResponse) return rateLimitResponse;
+
   try {
     const body = await request.json();
     const { imageUrl } = body;

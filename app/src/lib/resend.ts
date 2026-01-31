@@ -4,7 +4,7 @@ const resend = process.env.RESEND_API_KEY
   ? new Resend(process.env.RESEND_API_KEY)
   : null;
 
-const FROM_EMAIL = "Genea <noreply@dunklabs.design>";
+const FROM_EMAIL = "Genea <noreply@mail.genea.cc>";
 
 export type EmailTemplate =
   | "welcome"
@@ -127,7 +127,7 @@ const templates: Record<
             🎁 <strong>Você tem 1 restauração gratuita!</strong> Experimente agora mesmo.
           </p>
         </div>
-        <a href="https://genea.com.br/upload" style="display: inline-block; background-color: #16a34a; color: #ffffff; text-decoration: none; padding: 14px 28px; border-radius: 8px; font-weight: 600; font-size: 16px;">
+        <a href="https://genea.cc/upload" style="display: inline-block; background-color: #16a34a; color: #ffffff; text-decoration: none; padding: 14px 28px; border-radius: 8px; font-weight: 600; font-size: 16px;">
           Restaurar minha primeira foto
         </a>
       `);
@@ -197,7 +197,7 @@ const templates: Record<
             </tr>
           </table>
         </div>
-        <a href="https://genea.com.br/upload" style="display: inline-block; background-color: #16a34a; color: #ffffff; text-decoration: none; padding: 14px 28px; border-radius: 8px; font-weight: 600; font-size: 16px;">
+        <a href="https://genea.cc/upload" style="display: inline-block; background-color: #16a34a; color: #ffffff; text-decoration: none; padding: 14px 28px; border-radius: 8px; font-weight: 600; font-size: 16px;">
           Restaurar minhas fotos
         </a>
       `);
