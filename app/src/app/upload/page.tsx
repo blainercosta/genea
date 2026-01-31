@@ -30,13 +30,16 @@ export default function UploadPage() {
 
   // Track consumed credit for rollback on error
   const [creditConsumed, setCreditConsumed] = useState(false);
-  // Use ref for trial state to avoid closure issues (state updates are async)
-  const wasTrialRef = useRef(false);
+  // Use ref for trial state - MUST be set before upload() is called
+  // This avoids closure issues since refs are read at execution time
+  const wasTrialRef = useRef<boolean | null>(null);
 
   const { upload, isUploading, error } = useUpload({
     onSuccess: (url) => {
       const restorationId = `r_${Date.now()}`;
-      const wasTrial = wasTrialRef.current;
+      // Read from ref - if null (shouldn't happen), default to checking isPaid
+      const wasTrial = wasTrialRef.current ?? !isPaid;
+      console.log("[upload] onSuccess - wasTrial:", wasTrial, "ref.current:", wasTrialRef.current);
       // Save isTrial in restoration record for watermark logic in result page
       createRestoration({
         id: restorationId,
@@ -82,8 +85,10 @@ export default function UploadPage() {
       return;
     }
     setCreditConsumed(true);
-    // Capture trial state BEFORE it changes (ref for closure access in onSuccess)
-    wasTrialRef.current = !isPaid;
+    // Capture trial state BEFORE upload - ref ensures callback gets current value
+    const isTrialUpload = !isPaid;
+    wasTrialRef.current = isTrialUpload;
+    console.log("[upload] handleUpload - isPaid:", isPaid, "isTrialUpload:", isTrialUpload);
 
     setCurrentFile(file);
     analytics.uploadStart("gallery");
