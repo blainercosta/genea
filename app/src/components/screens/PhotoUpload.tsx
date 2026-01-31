@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useCallback } from "react";
-import { Upload, Camera, Image, Lightbulb, CheckCircle } from "lucide-react";
+import { Upload, Camera, Image as ImageIcon, Lightbulb, CheckCircle } from "lucide-react";
 import { Header, Stepper } from "@/components/layout";
 import { Button, Card } from "@/components/ui";
 import { cn } from "@/lib/utils";
@@ -129,7 +129,7 @@ export function PhotoUpload({ onUpload, isPaid = false, credits = 0 }: PhotoUplo
                 className="hidden"
               />
               <div className="flex items-center justify-center gap-2 h-12 px-6 rounded-xl font-medium border-2 border-genea-green text-genea-green bg-transparent hover:bg-genea-green hover:text-white transition-all">
-                <Image className="w-4 h-4" />
+                <ImageIcon className="w-4 h-4" />
                 <span>Galeria</span>
               </div>
             </label>

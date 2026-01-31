@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Image from "next/image";
 import { Quote, ChevronLeft, ChevronRight } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useScrollAnimation } from "@/hooks";
@@ -133,11 +134,12 @@ function TestimonialCard({ testimonial }: { testimonial: typeof testimonials[0] 
 
       {/* Author */}
       <div className="flex items-center gap-3">
-        <div className="w-12 h-12 rounded-full overflow-hidden bg-ih-surface-warm">
-          <img
+        <div className="relative w-12 h-12 rounded-full overflow-hidden bg-ih-surface-warm">
+          <Image
             src={testimonial.image}
             alt={testimonial.name}
-            className="w-full h-full object-cover"
+            fill
+            className="object-cover"
           />
         </div>
         <div>

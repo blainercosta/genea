@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { Check, Shield } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { cn } from "@/lib/utils";
@@ -199,7 +200,7 @@ function PaymentIcon({ type }: { type: "pix" | "visa" | "mastercard" }) {
   const icons = {
     pix: (
       <div className="w-10 h-10 flex items-center justify-center rounded-lg bg-[#4DB6AC]/10">
-        <img src="/images/pix.svg" alt="PIX" className="w-6 h-6" />
+        <Image src="/images/pix.svg" alt="PIX" width={24} height={24} />
       </div>
     ),
     visa: (

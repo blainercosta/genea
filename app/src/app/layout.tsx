@@ -1,6 +1,14 @@
 import type { Metadata } from "next";
+import { IBM_Plex_Sans } from "next/font/google";
 import "./globals.css";
 import { PostHogProvider } from "@/components/providers/PostHogProvider";
+
+const ibmPlexSans = IBM_Plex_Sans({
+  subsets: ["latin"],
+  weight: ["400", "500", "600", "700"],
+  display: "swap",
+  variable: "--font-ibm-plex-sans",
+});
 
 export const metadata: Metadata = {
   title: "Genea - Restauração de Fotos Antigas",
@@ -18,8 +26,8 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="pt-BR">
-      <body>
+    <html lang="pt-BR" className={ibmPlexSans.variable}>
+      <body className={ibmPlexSans.className}>
         <PostHogProvider>{children}</PostHogProvider>
       </body>
     </html>

@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import { Check, Shield } from "lucide-react";
 import { Header } from "@/components/layout";
 import { Button } from "@/components/ui";
@@ -135,7 +136,7 @@ export function Checkout({
         <div className="text-center space-y-3">
           <div className="flex items-center justify-center gap-4">
             <div className="w-10 h-10 flex items-center justify-center rounded-lg bg-[#4DB6AC]/10">
-              <img src="/images/pix.svg" alt="PIX" className="w-6 h-6" />
+              <Image src="/images/pix.svg" alt="PIX" width={24} height={24} />
             </div>
             <svg viewBox="0 0 40 40" className="w-10 h-10">
               <rect width="40" height="40" rx="8" fill="#1A1F71" fillOpacity="0.1" />

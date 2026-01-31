@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/Button";
 
@@ -43,7 +44,7 @@ export function Navbar() {
           className="hover:opacity-80 transition-opacity focus:outline-none focus-visible:opacity-80"
           aria-label="Voltar ao topo"
         >
-          <img src="/images/logo-t.svg" alt="Genea" className="h-10" />
+          <Image src="/images/logo-t.svg" alt="Genea" width={120} height={40} className="h-10 w-auto" />
         </button>
 
         {/* Desktop Nav Links */}

@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import { Instagram, MessageCircle } from "lucide-react";
 
 const WHATSAPP_NUMBER = "5511992785756";
@@ -20,7 +21,7 @@ export function Footer() {
           {/* Brand */}
           <div>
             <div className="flex items-center gap-2 mb-2">
-              <img src="/images/logo-min.svg" alt="" className="h-8" />
+              <Image src="/images/logo-min.svg" alt="" width={32} height={32} />
               <span className="text-2xl font-bold text-white">Genea</span>
             </div>
             <p className="text-white/70">Salvando memórias de família</p>

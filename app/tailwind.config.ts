@@ -32,7 +32,7 @@ const config: Config = {
         },
       },
       fontFamily: {
-        sans: ["IBM Plex Sans", "system-ui", "sans-serif"],
+        sans: ["var(--font-ibm-plex-sans)", "system-ui", "sans-serif"],
       },
       borderRadius: {
         "4xl": "1.75rem",

@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import { Quote } from "lucide-react";
 import { useScrollAnimation } from "@/hooks";
 import { cn } from "@/lib/utils";
@@ -21,11 +22,12 @@ export function FounderSection() {
             )}
           >
             <div className="relative">
-              <div className="w-40 h-40 md:w-48 md:h-48 rounded-full overflow-hidden bg-ih-surface shadow-card transition-transform duration-300 hover:scale-105">
-                <img
+              <div className="relative w-40 h-40 md:w-48 md:h-48 rounded-full overflow-hidden bg-ih-surface shadow-card transition-transform duration-300 hover:scale-105">
+                <Image
                   src="https://genea-photos.s3.sa-east-1.amazonaws.com/landing/profile-blainer.png"
                   alt="Blainer Costa, Fundador do Genea"
-                  className="w-full h-full object-cover"
+                  fill
+                  className="object-cover"
                 />
               </div>
               {/* Decorative ring */}

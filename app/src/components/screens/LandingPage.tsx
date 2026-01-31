@@ -1,20 +1,39 @@
 "use client";
 
+import dynamic from "next/dynamic";
 import {
   Navbar,
   HeroSection,
   ProblemSection,
   ResultsSection,
-  GenealogySection,
-  HowItWorksSection,
-  FounderSection,
-  PricingSection,
-  TestimonialsSection,
-  FAQSection,
-  FinalCTASection,
-  Footer,
   MobileStickyButton,
 } from "@/components/landing";
+
+// Lazy load below-the-fold sections
+const GenealogySection = dynamic(() =>
+  import("@/components/landing").then((m) => ({ default: m.GenealogySection }))
+);
+const HowItWorksSection = dynamic(() =>
+  import("@/components/landing").then((m) => ({ default: m.HowItWorksSection }))
+);
+const FounderSection = dynamic(() =>
+  import("@/components/landing").then((m) => ({ default: m.FounderSection }))
+);
+const PricingSection = dynamic(() =>
+  import("@/components/landing").then((m) => ({ default: m.PricingSection }))
+);
+const TestimonialsSection = dynamic(() =>
+  import("@/components/landing").then((m) => ({ default: m.TestimonialsSection }))
+);
+const FAQSection = dynamic(() =>
+  import("@/components/landing").then((m) => ({ default: m.FAQSection }))
+);
+const FinalCTASection = dynamic(() =>
+  import("@/components/landing").then((m) => ({ default: m.FinalCTASection }))
+);
+const Footer = dynamic(() =>
+  import("@/components/landing").then((m) => ({ default: m.Footer }))
+);
 
 export function LandingPage() {
   return (

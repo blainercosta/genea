@@ -16,8 +16,7 @@ export function PostHogProvider({ children }: { children: React.ReactNode }) {
           person_profiles: "identified_only",
           capture_pageview: true,
           capture_pageleave: true,
-          autocapture: true,
-          defaults: "2025-05-24",
+          autocapture: false,
         });
       }
     }

@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { AlertTriangle } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { useScrollAnimation } from "@/hooks";
@@ -77,10 +78,11 @@ export function ProblemSection() {
               >
                 {/* Photo */}
                 <div className="relative w-36 aspect-[3/4] rounded-xl overflow-hidden bg-ih-surface shadow-card-sm mb-4 transition-transform duration-300 hover:scale-105">
-                  <img
+                  <Image
                     src={step.image}
                     alt={`Foto em ${step.year}`}
-                    className="w-full h-full object-cover"
+                    fill
+                    className="object-cover"
                     style={{
                       filter: index === 0 ? "none" :
                               index === 1 ? "sepia(0.3) saturate(0.8)" :
@@ -116,10 +118,11 @@ export function ProblemSection() {
             >
               {/* Photo */}
               <div className="relative w-20 aspect-[3/4] rounded-xl overflow-hidden bg-ih-surface shadow-card-sm flex-shrink-0">
-                <img
+                <Image
                   src={step.image}
                   alt={`Foto em ${step.year}`}
-                  className="w-full h-full object-cover"
+                  fill
+                  className="object-cover"
                   style={{
                     filter: index === 0 ? "none" :
                             index === 1 ? "sepia(0.3) saturate(0.8)" :

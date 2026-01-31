@@ -2,6 +2,7 @@
 
 import { cn } from "@/lib/utils";
 import Link from "next/link";
+import Image from "next/image";
 import { ImageIcon } from "lucide-react";
 
 interface HeaderProps {
@@ -19,7 +20,7 @@ export function Header({ showCredits = false, credits = 0, className }: HeaderPr
       )}
     >
       <Link href="/" className="flex items-center gap-2">
-        <img src="/images/logo-t.svg" alt="Genea" className="h-8 md:h-9" />
+        <Image src="/images/logo-t.svg" alt="Genea" width={108} height={36} className="h-8 md:h-9 w-auto" />
       </Link>
 
       {showCredits && (
