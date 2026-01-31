@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { PhotoUpload } from "@/components/screens";
 import { useUser, useUpload } from "@/hooks";
@@ -30,12 +30,13 @@ export default function UploadPage() {
 
   // Track consumed credit for rollback on error
   const [creditConsumed, setCreditConsumed] = useState(false);
-  // Track if this upload was a trial (determined BEFORE consumeCredit)
-  const [wasTrialUpload, setWasTrialUpload] = useState(false);
+  // Use ref for trial state to avoid closure issues (state updates are async)
+  const wasTrialRef = useRef(false);
 
   const { upload, isUploading, error } = useUpload({
     onSuccess: (url) => {
       const restorationId = `r_${Date.now()}`;
+      const wasTrial = wasTrialRef.current;
       // Save isTrial in restoration record for watermark logic in result page
       createRestoration({
         id: restorationId,
@@ -44,12 +45,12 @@ export default function UploadPage() {
         status: "processing",
         createdAt: new Date().toISOString(),
         adjustments: [],
-        isTrial: wasTrialUpload,
+        isTrial: wasTrial,
       });
 
       // Credit already consumed in handleUpload BEFORE upload started
       analytics.uploadComplete(currentFile?.size || 0, currentFile?.type || "unknown");
-      router.push(`/processing?id=${restorationId}&url=${encodeURIComponent(url)}&trial=${wasTrialUpload}`);
+      router.push(`/processing?id=${restorationId}&url=${encodeURIComponent(url)}&trial=${wasTrial}`);
     },
     onError: (err) => {
       analytics.uploadError(typeof err === "string" ? err : "Unknown error");
@@ -81,8 +82,8 @@ export default function UploadPage() {
       return;
     }
     setCreditConsumed(true);
-    // Capture trial state BEFORE it changes (for watermark logic later)
-    setWasTrialUpload(!isPaid);
+    // Capture trial state BEFORE it changes (ref for closure access in onSuccess)
+    wasTrialRef.current = !isPaid;
 
     setCurrentFile(file);
     analytics.uploadStart("gallery");
