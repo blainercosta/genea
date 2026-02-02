@@ -38,7 +38,7 @@ function CheckoutContent() {
   const handleContinue = (planId: string) => {
     const plan = PLANS_MAP[planId];
     if (plan) {
-      analytics.planSelect(planId, plan.name, plan.price, plan.photos);
+      // Note: analytics.planSelect already called in handleSelectPlan, skip here
 
       const user = getUser();
 
@@ -58,7 +58,8 @@ function CheckoutContent() {
       router.push(buildUrl("/pix", planId));
       return;
     }
-    router.push("/start?plan=2");
+    // Fallback: preserve restoration ID even on error
+    router.push(buildUrl("/start", "2"));
   };
 
   return (

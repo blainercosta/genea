@@ -55,6 +55,9 @@ function ResultContent() {
     }
   }, [restorationId, originalUrlParam, restoredUrlParam, getRestoration, getLatestRestoration, isLoading]);
 
+  // Show loading state while fetching restoration data
+  const isDataLoading = isLoading || (!restoration && (restorationId || originalUrlParam));
+
   // Use restoration's isTrial flag (captured at upload time, before consumeCredit)
   const isTrialRestoration = restoration?.isTrial ?? true;
   const isPaid = !isTrialRestoration;
@@ -157,6 +160,11 @@ function ResultContent() {
     });
     router.push(`/checkout?${params.toString()}`);
   };
+
+  // Show loading state while data is being fetched
+  if (isDataLoading) {
+    return <Result />;
+  }
 
   return (
     <Result

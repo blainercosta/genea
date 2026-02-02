@@ -138,18 +138,9 @@ export function Checkout({
             <div className="w-10 h-10 flex items-center justify-center rounded-lg bg-[#4DB6AC]/10">
               <Image src="/images/pix.svg" alt="PIX" width={24} height={24} />
             </div>
-            <svg viewBox="0 0 40 40" className="w-10 h-10">
-              <rect width="40" height="40" rx="8" fill="#1A1F71" fillOpacity="0.1" />
-              <text x="20" y="24" textAnchor="middle" className="text-[10px] font-bold fill-[#1A1F71]">VISA</text>
-            </svg>
-            <svg viewBox="0 0 40 40" className="w-10 h-10">
-              <rect width="40" height="40" rx="8" fill="#EB001B" fillOpacity="0.1" />
-              <circle cx="16" cy="20" r="6" fill="#EB001B" fillOpacity="0.8" />
-              <circle cx="24" cy="20" r="6" fill="#F79E1B" fillOpacity="0.8" />
-            </svg>
           </div>
           <p className="text-sm text-ih-text-secondary">
-            Paga por PIX ou cartão. Seus créditos nunca vencem.
+            Pagamento instantâneo via PIX. Seus créditos nunca vencem.
           </p>
         </div>
       </main>

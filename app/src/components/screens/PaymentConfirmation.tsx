@@ -4,7 +4,6 @@ import { CheckCircle, ArrowRight } from "lucide-react";
 import { Header } from "@/components/layout";
 import { Button, Card } from "@/components/ui";
 import { DEFAULT_PLAN } from "@/config/plans";
-import Link from "next/link";
 
 interface PaymentConfirmationProps {
   photos?: number;
@@ -55,12 +54,10 @@ export function PaymentConfirmation({
           </Card>
 
           {/* CTA */}
-          <Link href="/upload" className="w-full">
-            <Button onClick={onStartRestoring} size="lg" className="w-full gap-2">
-              Começar a restaurar
-              <ArrowRight className="w-4 h-4" />
-            </Button>
-          </Link>
+          <Button onClick={onStartRestoring} size="lg" className="w-full gap-2">
+            Começar a restaurar
+            <ArrowRight className="w-4 h-4" />
+          </Button>
 
           {/* Receipt note */}
           <p className="text-sm text-ih-text-muted text-center">

@@ -31,6 +31,9 @@ interface PixPaymentProps {
   onCancel?: () => void;
 }
 
+// Maximum polling attempts (200 * 3s = ~10 minutes)
+const MAX_POLL_ATTEMPTS = 200;
+
 export function PixPayment({
   pix,
   plan,
@@ -71,6 +74,14 @@ export function PixPayment({
   const checkPaymentStatus = useCallback(async () => {
     if (isChecking) return;
 
+    // Safety limit: stop polling after MAX_POLL_ATTEMPTS
+    if (checkCountRef.current >= MAX_POLL_ATTEMPTS) {
+      console.warn("Max polling attempts reached, stopping");
+      setStatus("expired");
+      onExpired?.();
+      return;
+    }
+
     setIsChecking(true);
     try {
       const response = await fetch(`/api/payment/pix?id=${pix.id}`);
@@ -88,7 +99,7 @@ export function PixPayment({
     } finally {
       setIsChecking(false);
     }
-  }, [pix.id, onPaymentConfirmed, isChecking]);
+  }, [pix.id, onPaymentConfirmed, onExpired, isChecking]);
 
   // Polling a cada 3 segundos
   useEffect(() => {
