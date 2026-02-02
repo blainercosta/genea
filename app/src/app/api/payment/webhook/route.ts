@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import {
   validateWebhookSignature,
-  parseWebhookEvent,
   type AbacateWebhookEvent,
 } from "@/lib/abacate";
 import { getPlanById } from "@/config/plans";
@@ -24,14 +23,16 @@ import { sendPaymentConfirmedEmail, sendRefundProcessedEmail, isResendConfigured
 export async function POST(request: NextRequest) {
   try {
     const body = await request.text();
+    const url = new URL(request.url);
 
     // Identifica origem do webhook
-    const abacateSignature = request.headers.get("x-abacate-signature");
+    const abacateSignature = request.headers.get("x-webhook-signature");
+    const querySecret = url.searchParams.get("webhookSecret");
     const stripeSignature = request.headers.get("stripe-signature");
 
     // Webhook do Abacate Pay
-    if (abacateSignature || (!stripeSignature && body)) {
-      return handleAbacateWebhook(body, abacateSignature);
+    if (abacateSignature || querySecret || (!stripeSignature && body)) {
+      return handleAbacateWebhook(body, abacateSignature, querySecret);
     }
 
     // Webhook do Stripe (TODO: implementar quando integrar Stripe)
@@ -54,14 +55,37 @@ export async function POST(request: NextRequest) {
 }
 
 /**
+ * Formato real do webhook do Abacate Pay
+ */
+interface AbacateWebhookPayload {
+  event: string;
+  data: {
+    pixQrCode: {
+      id: string;
+      amount: number;
+      kind: string;
+      status: string;
+      metadata?: Record<string, string>;
+    };
+    payment: {
+      amount: number;
+      fee: number;
+      method: string;
+    };
+  };
+  devMode: boolean;
+}
+
+/**
  * Processa webhook do Abacate Pay
  */
 async function handleAbacateWebhook(
   body: string,
-  signature: string | null
+  signature: string | null,
+  querySecret: string | null
 ): Promise<NextResponse> {
   // SECURITY: Always validate webhook signature
-  if (!validateWebhookSignature(body, signature)) {
+  if (!validateWebhookSignature(body, signature, querySecret)) {
     console.error("Webhook signature validation failed");
     return NextResponse.json(
       { error: "Assinatura inválida" },
@@ -70,9 +94,9 @@ async function handleAbacateWebhook(
   }
 
   // Parse do evento
-  let event: AbacateWebhookEvent;
+  let payload: AbacateWebhookPayload;
   try {
-    event = parseWebhookEvent(body);
+    payload = JSON.parse(body);
   } catch {
     console.error("Payload de webhook inválido:", body);
     return NextResponse.json(
@@ -82,40 +106,54 @@ async function handleAbacateWebhook(
   }
 
   // Validate required fields
-  if (!event.event || !event.data?.id) {
-    console.error("Webhook missing required fields:", event);
+  if (!payload.event || !payload.data?.pixQrCode?.id) {
+    console.error("Webhook missing required fields:", payload);
     return NextResponse.json(
       { error: "Campos obrigatórios ausentes" },
       { status: 400 }
     );
   }
 
+  const { pixQrCode } = payload.data;
+
   console.log("Webhook Abacate Pay recebido:", {
-    event: event.event,
-    id: event.data.id,
-    status: event.data.status,
-    amount: event.data.amount,
+    event: payload.event,
+    id: pixQrCode.id,
+    status: pixQrCode.status,
+    amount: pixQrCode.amount,
+    devMode: payload.devMode,
   });
 
+  // Converte para formato interno
+  const event: AbacateWebhookEvent = {
+    event: payload.event.toUpperCase().replace(".", "_") as AbacateWebhookEvent["event"],
+    data: {
+      id: pixQrCode.id,
+      status: pixQrCode.status,
+      amount: pixQrCode.amount,
+      metadata: pixQrCode.metadata,
+    },
+  };
+
   // Processa baseado no tipo de evento
-  switch (event.event) {
-    case "BILLING_PAID":
+  switch (payload.event) {
+    case "billing.paid":
       await handlePaymentConfirmed(event);
       break;
 
-    case "BILLING_EXPIRED":
-      console.log("PIX expirado:", event.data.id);
+    case "billing.expired":
+      console.log("PIX expirado:", pixQrCode.id);
       break;
 
-    case "BILLING_REFUNDED":
+    case "billing.refunded":
       await handleRefund(event);
       break;
 
     default:
-      console.log("Evento desconhecido:", event.event);
+      console.log("Evento desconhecido:", payload.event);
   }
 
-  return NextResponse.json({ received: true, event: event.event });
+  return NextResponse.json({ received: true, event: payload.event });
 }
 
 /**

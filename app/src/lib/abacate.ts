@@ -171,49 +171,70 @@ export async function getPixStatus(pixId: string): Promise<{
 }
 
 /**
+ * Chave pública do Abacate Pay para validação HMAC
+ * Fonte: https://docs.abacatepay.com/pages/webhooks
+ */
+const ABACATE_PUBLIC_KEY =
+  "t9dXRhHHo3yDEj5pVDYz0frf7q6bMKyMRmxxCPIPp3RCplBfXRxqlC6ZpiWmOqj4L63qEaeUOtrCI8P0VMUgo6iIga2ri9ogaHFs0WIIywSMg0q7RmBfybe1E5XJcfC4IW3alNqym0tXoAKkzvfEjZxV6bE0oG2zJrNNYmUCKZyV0KZ3JS8Votf9EAWWYdiDkMkpbMdPggfh1EqHlVkMiTady6jOR3hyzGEHrIz2Ret0xHKMbiqkr9HS1JhNHDX9";
+
+/**
  * Valida assinatura de webhook do Abacate Pay
- * Usa HMAC SHA256 para validar a integridade da requisição
  *
- * SECURITY: In production, ALWAYS configure ABACATE_WEBHOOK_SECRET
+ * O Abacate Pay suporta duas formas de validação:
+ * 1. Query string: ?webhookSecret=xxx (validado pelo secret configurado no webhook)
+ * 2. Header X-Webhook-Signature: HMAC-SHA256 com chave pública fixa
+ *
+ * @param payload - Body raw da requisição
+ * @param signature - Header X-Webhook-Signature (opcional)
+ * @param querySecret - Query param webhookSecret (opcional)
  */
 export function validateWebhookSignature(
   payload: string,
-  signature: string | null
+  signature: string | null,
+  querySecret?: string | null
 ): boolean {
-  const secret = process.env.ABACATE_WEBHOOK_SECRET;
-  const isProduction = process.env.NODE_ENV === "production";
+  const configuredSecret = process.env.ABACATE_WEBHOOK_SECRET;
 
-  if (!secret) {
-    if (isProduction) {
-      // SECURITY: In production, reject webhooks without secret configured
-      console.error("CRITICAL: ABACATE_WEBHOOK_SECRET not configured in production!");
-      return false;
+  // Método 1: Validação via query string
+  if (querySecret && configuredSecret) {
+    if (querySecret === configuredSecret) {
+      console.log("Webhook validated via query string secret");
+      return true;
     }
-    // Only allow bypass in development
-    console.warn("DEV MODE: ABACATE_WEBHOOK_SECRET não configurado - validação ignorada");
+  }
+
+  // Método 2: Validação via HMAC com chave pública
+  if (signature) {
+    try {
+      const expectedSignature = crypto
+        .createHmac("sha256", ABACATE_PUBLIC_KEY)
+        .update(payload)
+        .digest("hex");
+
+      const isValid = crypto.timingSafeEqual(
+        Buffer.from(signature),
+        Buffer.from(expectedSignature)
+      );
+
+      if (isValid) {
+        console.log("Webhook validated via HMAC signature");
+        return true;
+      }
+    } catch (error) {
+      console.error("Error validating HMAC signature:", error);
+    }
+  }
+
+  // Método 3: Em desenvolvimento, permite sem validação
+  const isProduction = process.env.NODE_ENV === "production";
+  if (!isProduction) {
+    console.warn("DEV MODE: Webhook validation bypassed");
     return true;
   }
 
-  // If secret is configured but no signature provided, reject
-  if (!signature) {
-    console.error("Webhook signature missing");
-    return false;
-  }
-
-  try {
-    const expectedSignature = crypto
-      .createHmac("sha256", secret)
-      .update(payload)
-      .digest("hex");
-
-    return crypto.timingSafeEqual(
-      Buffer.from(signature),
-      Buffer.from(expectedSignature)
-    );
-  } catch (error) {
-    console.error("Error validating webhook signature:", error);
-    return false;
-  }
+  // Em produção, se nenhuma validação passou, rejeita
+  console.error("Webhook validation failed: no valid signature or secret");
+  return false;
 }
 
 /**
