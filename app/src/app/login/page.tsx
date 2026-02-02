@@ -24,7 +24,7 @@ function LoginContent() {
   const { initialize, user, isLoading } = useUser();
 
   useEffect(() => {
-    analytics.pageView("login");
+    analytics.loginView();
   }, []);
 
   // If user is already logged in, redirect to dashboard

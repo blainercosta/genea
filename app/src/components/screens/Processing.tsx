@@ -18,6 +18,7 @@ const rotatingMessages = [
   "Analisando detalhes da foto...",
   "Restaurando cores...",
   "Removendo imperfeições...",
+  "Trazendo memórias de volta...",
   "Melhorando nitidez...",
   "Ajustando contraste...",
   "Quase pronto...",
@@ -66,7 +67,7 @@ export function Processing({ previewUrl }: ProcessingProps) {
             {rotatingMessages[messageIndex]}
           </p>
           <p className="text-sm text-ih-text-muted mt-2">
-            Fica aqui que já já sai. Leva menos de 2 minutos.
+            A mágica está acontecendo. Leva menos de 2 minutos.
           </p>
         </div>
       </main>

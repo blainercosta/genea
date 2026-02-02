@@ -151,8 +151,8 @@ export function Dashboard({
             </h1>
             <p className="text-ih-text-secondary max-w-md">
               {hasRestorations
-                ? "Restaure mais memórias ou veja suas fotos anteriores."
-                : "Vamos restaurar sua primeira foto?"}
+                ? "Suas memórias restauradas estão aqui."
+                : "Pronto para trazer uma memória de volta?"}
             </p>
           </div>
 
@@ -218,8 +218,7 @@ export function Dashboard({
                 <Sparkles className="w-10 h-10 text-genea-amber" />
               </div>
               <p className="text-ih-text-secondary max-w-sm">
-                Suas fotos restauradas aparecerão aqui. Comece restaurando sua
-                primeira memória!
+                Nenhuma foto ainda. Que tal começar com aquela foto especial?
               </p>
             </div>
           )}

@@ -275,10 +275,10 @@ export function LoginCapture({ onSubmit, onAuthenticated }: LoginCaptureProps) {
           {/* Text */}
           <div className="flex flex-col items-center gap-3 text-center">
             <h1 className="text-2xl md:text-3xl font-semibold text-ih-text">
-              Entrar na sua conta
+              Bem-vindo de volta
             </h1>
             <p className="text-ih-text-secondary">
-              Digite seu e-mail para acessar suas fotos restauradas.
+              Digite seu e-mail para ver suas memórias restauradas.
             </p>
           </div>
 
@@ -347,7 +347,7 @@ export function LoginCapture({ onSubmit, onAuthenticated }: LoginCaptureProps) {
                   Enviando código...
                 </>
               ) : (
-                "Entrar"
+                "Acessar minhas fotos"
               )}
             </Button>
           </form>

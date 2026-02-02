@@ -358,7 +358,7 @@ export function EmailCapture({ onSubmit, onAuthenticated }: EmailCaptureProps) {
                   Enviando código...
                 </>
               ) : (
-                "Continuar"
+                "Enviar código de acesso"
               )}
             </Button>
           </form>

@@ -147,6 +147,11 @@ export const analytics = {
     track("dashboard_view", { restoration_count: restorationCount, credits }),
 
   // ============================================
+  // LOGIN
+  // ============================================
+  loginView: () => track("login_view"),
+
+  // ============================================
   // ERRORS
   // ============================================
   errorPageView: (errorType?: string) => track("error_page_view", { error_type: errorType }),

@@ -139,7 +139,7 @@ export function PhotoUpload({ onUpload, isPaid = false, credits = 0 }: PhotoUplo
           <Card variant="default" className="flex items-center gap-3 p-4 rounded-xl border border-ih-border">
             <Lightbulb className="w-5 h-5 text-genea-amber flex-shrink-0" />
             <p className="text-sm text-ih-text-secondary">
-              Quanto melhor a qualidade da foto original, melhor o resultado.
+              Dica: escaneie a foto ou tire em boa luz. Evite reflexos.
             </p>
           </Card>
 

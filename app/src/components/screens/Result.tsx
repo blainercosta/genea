@@ -110,11 +110,11 @@ export function Result({
                 <div className="absolute bottom-4 right-4 rounded-full bg-genea-green px-3 py-1.5 text-xs font-semibold text-white shadow-lg">
                   Depois
                 </div>
-                {/* Watermark indicator for trial */}
+                {/* Preview indicator for trial */}
                 {!showAsPaid && (
                   <div className="absolute top-4 right-4 flex items-center gap-1.5 rounded-full bg-black/60 px-3 py-1.5">
                     <Lock className="w-3 h-3 text-white/90" />
-                    <span className="text-xs font-medium text-white/90">Com marca d&apos;água</span>
+                    <span className="text-xs font-medium text-white/90">Preview</span>
                   </div>
                 )}
               </div>
@@ -216,8 +216,8 @@ export function Result({
                   onClick={onUnlockThisPhoto}
                   className="w-full h-14 text-base bg-genea-green hover:bg-genea-green/90 border-genea-green text-white font-semibold shadow-lg"
                 >
-                  <Lock className="w-5 h-5 mr-2" />
-                  Desbloquear por R$ 9,90
+                  <Download className="w-5 h-5 mr-2" />
+                  Baixar minha foto por R$ 9,90
                 </Button>
 
                 {/* Secondary CTA: Get more photos */}
@@ -226,7 +226,7 @@ export function Result({
                   onClick={onGetMorePhotos}
                   className="w-full h-12"
                 >
-                  Quero mais fotos (desconto)
+                  Ver pacotes (até 40% off)
                 </Button>
 
                 <div className="flex items-center justify-center gap-4 text-xs text-ih-text-muted">
@@ -243,7 +243,7 @@ export function Result({
                   className="w-full gap-2 h-11 text-ih-text-muted"
                 >
                   <Download className="w-4 h-4" />
-                  Baixar com marca d&apos;água
+                  Baixar preview
                 </Button>
               </>
             )}
