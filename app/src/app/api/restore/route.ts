@@ -2,6 +2,11 @@ import { NextRequest, NextResponse } from "next/server";
 import { restorePhoto } from "@/lib/fal";
 import { uploadToS3 } from "@/lib/s3";
 import { checkRateLimit, RATE_LIMITS } from "@/lib/rateLimit";
+import {
+  getUserByEmail,
+  createRestoration,
+  updateRestorationStatus,
+} from "@/lib/supabase";
 
 export const runtime = "nodejs";
 export const maxDuration = 60; // Allow up to 60 seconds for restoration
@@ -15,9 +20,11 @@ export async function POST(request: NextRequest) {
   const rateLimitResponse = checkRateLimit(request, "restore", RATE_LIMITS.restore);
   if (rateLimitResponse) return rateLimitResponse;
 
+  let restorationId: string | null = null;
+
   try {
     const body = await request.json();
-    const { imageUrl, isTrial = false } = body;
+    const { imageUrl, isTrial = false, email } = body;
 
     if (!imageUrl) {
       return NextResponse.json(
@@ -27,6 +34,27 @@ export async function POST(request: NextRequest) {
     }
 
     console.log("Starting restoration for:", imageUrl, isTrial ? "(trial - 1K)" : "(paid - 2K)");
+
+    // Get user from Supabase to save restoration record
+    let userId: string | null = null;
+    if (email) {
+      const user = await getUserByEmail(email);
+      if (user) {
+        userId = user.id;
+
+        // Create restoration record in Supabase
+        const restoration = await createRestoration({
+          userId: user.id,
+          originalUrl: imageUrl,
+          isTrial,
+        });
+
+        if (restoration) {
+          restorationId = restoration.id;
+          console.log("Created restoration record:", restorationId);
+        }
+      }
+    }
 
     // Restore photo via fal.ai (trial gets 1K, paid gets 2K resolution)
     const result = await restorePhoto(imageUrl, { isTrial });
@@ -60,18 +88,35 @@ export async function POST(request: NextRequest) {
       }
     }
 
+    // Update restoration record in Supabase with the result
+    if (restorationId) {
+      await updateRestorationStatus(restorationId, {
+        status: "completed",
+        restoredUrl: finalUrl,
+      });
+      console.log("Updated restoration record:", restorationId);
+    }
+
     return NextResponse.json({
       success: true,
       status: "completed",
       restoredUrl: finalUrl,
+      restorationId,
     });
   } catch (error) {
     console.error("Restore error:", error);
+
+    // Update restoration record as failed if it was created
+    if (restorationId) {
+      await updateRestorationStatus(restorationId, { status: "failed" });
+    }
+
     return NextResponse.json(
       {
         success: false,
         status: "failed",
         error: error instanceof Error ? error.message : "Erro ao restaurar. Tente novamente.",
+        restorationId,
       },
       { status: 500 }
     );

@@ -29,6 +29,7 @@ async function syncFromSupabase(email: string): Promise<{
   name?: string;
   phone?: string;
   taxId?: string;
+  restorations?: Restoration[];
 } | null> {
   try {
     const response = await fetch(`/api/user?email=${encodeURIComponent(email)}`);
@@ -41,6 +42,7 @@ async function syncFromSupabase(email: string): Promise<{
         name: data.user.name,
         phone: data.user.phone,
         taxId: data.user.taxId,
+        restorations: data.user.restorations || [],
       };
     }
     return null;
@@ -48,6 +50,38 @@ async function syncFromSupabase(email: string): Promise<{
     console.error("Error syncing from Supabase:", error);
     return null;
   }
+}
+
+/**
+ * Merge Supabase restorations with local restorations
+ * Supabase is source of truth, but keep local adjustments since they're not in DB yet
+ */
+function mergeRestorations(
+  supabaseRestorations: Restoration[],
+  localRestorations: Restoration[]
+): Restoration[] {
+  // Create a map of local restorations by ID for quick lookup
+  const localMap = new Map(localRestorations.map((r) => [r.id, r]));
+
+  // Use Supabase restorations as base, merge in local adjustments
+  const merged = supabaseRestorations.map((sbRestoration) => {
+    const local = localMap.get(sbRestoration.id);
+    if (local?.adjustments?.length) {
+      // Keep local adjustments since they're not stored in DB
+      return { ...sbRestoration, adjustments: local.adjustments };
+    }
+    return sbRestoration;
+  });
+
+  // Add any local-only restorations (shouldn't happen normally, but just in case)
+  const supabaseIds = new Set(supabaseRestorations.map((r) => r.id));
+  for (const local of localRestorations) {
+    if (!supabaseIds.has(local.id)) {
+      merged.push(local);
+    }
+  }
+
+  return merged;
 }
 
 /**
@@ -103,15 +137,21 @@ export function useUser() {
         const supabaseData = await syncFromSupabase(storedUser.email);
 
         if (supabaseData) {
-          // Update localStorage with Supabase data (Supabase is source of truth for credits)
+          // Merge restorations (Supabase + local adjustments)
+          const mergedRestorations = mergeRestorations(
+            supabaseData.restorations || [],
+            storedUser.restorations || []
+          );
+
+          // Update localStorage with Supabase data (Supabase is source of truth)
           const updatedUser: User = {
             ...storedUser,
             credits: supabaseData.credits,
             isTrialUsed: supabaseData.isTrialUsed,
-            // Keep local name/phone/taxId if Supabase doesn't have them
             name: supabaseData.name || storedUser.name,
             phone: supabaseData.phone || storedUser.phone,
             taxId: supabaseData.taxId || storedUser.taxId,
+            restorations: mergedRestorations,
           };
           saveUser(updatedUser);
           setUser(updatedUser);
@@ -137,6 +177,12 @@ export function useUser() {
 
     // If Supabase has data, user already exists (not new)
     if (supabaseData) {
+      // Merge restorations
+      const mergedRestorations = mergeRestorations(
+        supabaseData.restorations || [],
+        newUser.restorations || []
+      );
+
       const updatedUser: User = {
         ...newUser,
         credits: supabaseData.credits,
@@ -144,6 +190,7 @@ export function useUser() {
         name: supabaseData.name || newUser.name,
         phone: supabaseData.phone || newUser.phone,
         taxId: supabaseData.taxId || newUser.taxId,
+        restorations: mergedRestorations,
       };
       saveUser(updatedUser);
       setUser(updatedUser);
@@ -236,6 +283,12 @@ export function useUser() {
     const supabaseData = await syncFromSupabase(currentUser.email);
 
     if (supabaseData) {
+      // Merge restorations
+      const mergedRestorations = mergeRestorations(
+        supabaseData.restorations || [],
+        currentUser.restorations || []
+      );
+
       const updatedUser: User = {
         ...currentUser,
         credits: supabaseData.credits,
@@ -243,6 +296,7 @@ export function useUser() {
         name: supabaseData.name || currentUser.name,
         phone: supabaseData.phone || currentUser.phone,
         taxId: supabaseData.taxId || currentUser.taxId,
+        restorations: mergedRestorations,
       };
       saveUser(updatedUser);
       setUser(updatedUser);

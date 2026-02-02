@@ -134,7 +134,8 @@ function ProcessingContent() {
       adjust(decodedUrl, adjustments, decodedNote);
     } else {
       // Pass isTrial flag for resolution selection (trial=1K, paid=2K)
-      restore(decodedUrl, isTrial);
+      // Pass email to save restoration to Supabase
+      restore(decodedUrl, isTrial, user?.email);
     }
   }, [imageUrl, status, mode, adjustments, customNote, restore, adjust, isTrial]);
 

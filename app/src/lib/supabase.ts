@@ -27,6 +27,20 @@ export interface DbAuthCode {
   created_at: string;
 }
 
+/**
+ * Restoration type from database
+ */
+export interface DbRestoration {
+  id: string;
+  user_id: string;
+  original_url: string;
+  restored_url: string | null;
+  status: "pending" | "processing" | "completed" | "failed";
+  is_paid: boolean;
+  created_at: string;
+  completed_at: string | null;
+}
+
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
@@ -275,4 +289,133 @@ export async function updateUserProfile(
     .eq("id", userId);
 
   return !error;
+}
+
+// ============================================
+// RESTORATIONS
+// ============================================
+
+/**
+ * Create a new restoration record
+ */
+export async function createRestoration(data: {
+  userId: string;
+  originalUrl: string;
+  isTrial: boolean;
+}): Promise<DbRestoration | null> {
+  const supabase = getSupabase();
+  if (!supabase) return null;
+
+  const { data: restoration, error } = await supabase
+    .from("restorations")
+    .insert({
+      user_id: data.userId,
+      original_url: data.originalUrl,
+      status: "processing",
+      is_paid: !data.isTrial,
+    } as never)
+    .select()
+    .single();
+
+  if (error) {
+    console.error("Error creating restoration:", error);
+    return null;
+  }
+
+  return restoration as DbRestoration;
+}
+
+/**
+ * Update restoration after processing completes
+ */
+export async function updateRestorationStatus(
+  restorationId: string,
+  data: {
+    status: "completed" | "failed";
+    restoredUrl?: string;
+  }
+): Promise<boolean> {
+  const supabase = getSupabase();
+  if (!supabase) return false;
+
+  const updateData: Record<string, unknown> = {
+    status: data.status,
+  };
+
+  if (data.restoredUrl) {
+    updateData.restored_url = data.restoredUrl;
+  }
+
+  if (data.status === "completed") {
+    updateData.completed_at = new Date().toISOString();
+  }
+
+  const { error } = await supabase
+    .from("restorations")
+    .update(updateData as never)
+    .eq("id", restorationId);
+
+  if (error) {
+    console.error("Error updating restoration:", error);
+    return false;
+  }
+
+  return true;
+}
+
+/**
+ * Mark restoration as paid (when user unlocks trial photo)
+ */
+export async function markRestorationAsPaid(restorationId: string): Promise<boolean> {
+  const supabase = getSupabase();
+  if (!supabase) return false;
+
+  const { error } = await supabase
+    .from("restorations")
+    .update({ is_paid: true } as never)
+    .eq("id", restorationId);
+
+  return !error;
+}
+
+/**
+ * Get all restorations for a user
+ */
+export async function getRestorationsByUserId(userId: string): Promise<DbRestoration[]> {
+  const supabase = getSupabase();
+  if (!supabase) return [];
+
+  const { data, error } = await supabase
+    .from("restorations")
+    .select("*")
+    .eq("user_id", userId)
+    .order("created_at", { ascending: false });
+
+  if (error) {
+    console.error("Error fetching restorations:", error);
+    return [];
+  }
+
+  return (data || []) as DbRestoration[];
+}
+
+/**
+ * Get a specific restoration by ID
+ */
+export async function getRestorationById(restorationId: string): Promise<DbRestoration | null> {
+  const supabase = getSupabase();
+  if (!supabase) return null;
+
+  const { data, error } = await supabase
+    .from("restorations")
+    .select("*")
+    .eq("id", restorationId)
+    .single();
+
+  if (error) {
+    console.error("Error fetching restoration:", error);
+    return null;
+  }
+
+  return data as DbRestoration;
 }

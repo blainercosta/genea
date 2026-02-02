@@ -7,7 +7,25 @@ import {
   consumeUserCredit,
   markTrialUsed,
   updateUserProfile,
+  getRestorationsByUserId,
+  markRestorationAsPaid,
+  type DbRestoration,
 } from "@/lib/supabase";
+
+/**
+ * Convert DB restoration to client format
+ */
+function formatRestoration(r: DbRestoration) {
+  return {
+    id: r.id,
+    originalUrl: r.original_url,
+    restoredUrl: r.restored_url,
+    status: r.status,
+    isTrial: !r.is_paid,
+    createdAt: r.created_at,
+    adjustments: [], // Adjustments not stored in DB yet
+  };
+}
 
 /**
  * GET /api/user?email=xxx
@@ -36,6 +54,10 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ user: null });
     }
 
+    // Fetch user's restorations from Supabase
+    const dbRestorations = await getRestorationsByUserId(user.id);
+    const restorations = dbRestorations.map(formatRestoration);
+
     return NextResponse.json({
       user: {
         id: user.id,
@@ -45,6 +67,7 @@ export async function GET(request: NextRequest) {
         taxId: user.tax_id,
         credits: user.credits,
         isTrialUsed: user.is_trial_used,
+        restorations,
       },
       source: "supabase",
     });
@@ -105,6 +128,10 @@ export async function POST(request: NextRequest) {
           });
         }
 
+        // Fetch user's restorations
+        const dbRestorations = await getRestorationsByUserId(user.id);
+        const restorations = dbRestorations.map(formatRestoration);
+
         return NextResponse.json({
           success: true,
           user: {
@@ -115,6 +142,7 @@ export async function POST(request: NextRequest) {
             taxId: taxId || user.tax_id,
             credits: user.credits,
             isTrialUsed: user.is_trial_used,
+            restorations,
           },
           source: "supabase",
         });
@@ -166,6 +194,16 @@ export async function POST(request: NextRequest) {
         });
 
         return NextResponse.json({ success: updated });
+      }
+
+      case "markRestorationPaid": {
+        const { restorationId } = body;
+        if (!restorationId) {
+          return NextResponse.json({ error: "restorationId is required" }, { status: 400 });
+        }
+
+        const marked = await markRestorationAsPaid(restorationId);
+        return NextResponse.json({ success: marked });
       }
 
       default:
