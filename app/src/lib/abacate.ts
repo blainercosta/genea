@@ -17,12 +17,13 @@ const PIX_EXPIRATION_SECONDS = 1800;
 
 /**
  * Resposta da API ao criar PIX
+ * Status possíveis da API: PENDING, EXPIRED, CANCELLED, PAID, REFUNDED
  */
 export interface AbacatePixResponse {
   error: string | null;
   data: {
     id: string;
-    status: "PENDING" | "COMPLETED" | "EXPIRED" | "REFUNDED";
+    status: "PENDING" | "PAID" | "EXPIRED" | "CANCELLED" | "REFUNDED";
     brCode: string;
     brCodeBase64: string;
     amount: number;
@@ -153,6 +154,8 @@ export async function generatePix(
 
 /**
  * Consulta o status de um pagamento PIX
+ * Endpoint: GET /pixQrCode/check?id=xxx
+ * Status possíveis: PENDING, EXPIRED, CANCELLED, PAID, REFUNDED
  */
 export async function getPixStatus(pixId: string): Promise<{
   id: string;
@@ -160,12 +163,27 @@ export async function getPixStatus(pixId: string): Promise<{
   amount: number;
 }> {
   const response = await abacateRequest<AbacatePixResponse>(
-    `/pixQrCode/${pixId}`
+    `/pixQrCode/check?id=${pixId}`
   );
+
+  // Map API status to frontend status for compatibility
+  // API: PENDING, PAID, EXPIRED, CANCELLED, REFUNDED
+  // Frontend: PENDING, COMPLETED, EXPIRED, REFUNDED
+  let status: "PENDING" | "COMPLETED" | "EXPIRED" | "REFUNDED" = "PENDING";
+  switch (response.data.status) {
+    case "PAID":
+      status = "COMPLETED";
+      break;
+    case "CANCELLED":
+      status = "EXPIRED"; // Treat cancelled as expired for frontend
+      break;
+    default:
+      status = response.data.status as "PENDING" | "EXPIRED" | "REFUNDED";
+  }
 
   return {
     id: response.data.id,
-    status: response.data.status,
+    status,
     amount: response.data.amount / 100, // Converte centavos para reais
   };
 }
