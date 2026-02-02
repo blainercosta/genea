@@ -5,6 +5,13 @@ import {
 } from "@/lib/abacate";
 import { getPlanById } from "@/config/plans";
 import { sendPaymentConfirmedEmail, sendRefundProcessedEmail, isResendConfigured } from "@/lib/resend";
+import {
+  getOrCreateUser,
+  addUserCredits,
+  updateUserProfile,
+  getSupabase,
+  isSupabaseConfigured,
+} from "@/lib/supabase";
 
 /**
  * POST /api/payment/webhook
@@ -159,12 +166,9 @@ async function handleAbacateWebhook(
 /**
  * Processa pagamento confirmado
  *
- * NOTA: Como não há banco de dados, os créditos são gerenciados
- * via localStorage no cliente. O webhook serve para:
- * 1. Logging/auditoria
- * 2. Envio de email de confirmação
- * 3. Validação de integridade do pagamento
- * 4. Possível integração futura com banco de dados
+ * 1. Adiciona créditos ao usuário no Supabase
+ * 2. Registra o pagamento na tabela payments
+ * 3. Envia email de confirmação
  */
 async function handlePaymentConfirmed(event: AbacateWebhookEvent) {
   const { metadata } = event.data;
@@ -196,6 +200,7 @@ async function handlePaymentConfirmed(event: AbacateWebhookEvent) {
 
   // Busca dados do plano
   const plan = planId ? getPlanById(planId) : null;
+  const creditsToAdd = plan?.photos || parseInt(photos || "0");
 
   // SECURITY: Validate amount matches plan price
   if (plan) {
@@ -227,13 +232,68 @@ async function handlePaymentConfirmed(event: AbacateWebhookEvent) {
     });
   }
 
+  // Adiciona créditos no Supabase
+  if (email && isSupabaseConfigured()) {
+    try {
+      // Get or create user
+      const user = await getOrCreateUser(email);
+
+      if (user) {
+        // Update user profile if name provided
+        if (name) {
+          await updateUserProfile(user.id, { name });
+        }
+
+        // Add credits
+        const creditsAdded = await addUserCredits(user.id, creditsToAdd);
+
+        if (creditsAdded) {
+          console.log("Créditos adicionados no Supabase:", {
+            userId: user.id,
+            email,
+            credits: creditsToAdd,
+            newTotal: user.credits + creditsToAdd,
+          });
+
+          // Register payment in database
+          const supabase = getSupabase();
+          if (supabase) {
+            const { error: paymentError } = await supabase.from("payments").insert({
+              user_id: user.id,
+              pix_id: event.data.id,
+              plan_id: planId || "unknown",
+              amount: amountInReais,
+              credits: creditsToAdd,
+              status: "completed",
+              completed_at: new Date().toISOString(),
+            } as never);
+
+            if (paymentError) {
+              console.error("Erro ao registrar pagamento:", paymentError);
+            } else {
+              console.log("Pagamento registrado no banco:", event.data.id);
+            }
+          }
+        } else {
+          console.error("Falha ao adicionar créditos:", { userId: user.id, email });
+        }
+      } else {
+        console.error("Falha ao criar/buscar usuário:", email);
+      }
+    } catch (error) {
+      console.error("Erro ao processar créditos no Supabase:", error);
+    }
+  } else if (!isSupabaseConfigured()) {
+    console.warn("Supabase não configurado - créditos não persistidos");
+  }
+
   // Envia email de confirmação
   if (email && isResendConfigured()) {
     try {
       const result = await sendPaymentConfirmedEmail(
         email,
         plan?.name || `${photos} fotos`,
-        plan?.photos || parseInt(photos || "0"),
+        creditsToAdd,
         amountInReais,
         name
       );

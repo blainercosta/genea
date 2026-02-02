@@ -1,10 +1,10 @@
 # PRD - Genea
 
 ## Product Requirements Document
-**Versão:** 1.1
+**Versão:** 1.2
 **Data:** Janeiro 2025
-**Status:** MVP em Desenvolvimento
-**Implementação:** ~70% completo
+**Status:** MVP em Desenvolvimento - REQUER CORREÇÕES CRÍTICAS
+**Implementação:** ~85% completo (funcionalidades), ~60% (robustez)
 
 ### Status de Implementação (Atualizado: 30/01/2025)
 
@@ -12,29 +12,86 @@
 |-----------|--------|-----------|
 | Landing Page | ✅ Completo | 100% |
 | Páginas Core | ✅ Completo | 100% |
-| API Routes | ⚠️ Parcial | 70% |
-| Integrações | ⚠️ Parcial | 50% |
+| API Routes | ✅ Implementado | 90% |
+| Integrações | ⚠️ Parcial | 70% |
 | Hooks | ✅ Completo | 100% |
-| Features | ⚠️ Parcial | 75% |
+| Features | ⚠️ Parcial | 80% |
 | Estrutura | ✅ Completo | 100% |
+| **Robustez/Segurança** | 🟡 Parcial | 75% |
 
-**Progresso Geral:** ~80% completo
+**Progresso Geral:** ~90% pronto para produção
 
-**Bloqueadores para Produção:**
-1. Integração Stripe (pagamento cartão) - placeholder criado
-2. Integração Abacate Pay (pagamento PIX) - placeholder criado
-3. Integração Resend (emails transacionais) - placeholder criado
+---
 
-**Últimas correções (30/01/2025):**
-- ✅ Removido código morto (componentes órfãos, funções não usadas)
-- ✅ Single source of truth para planos (config/plans.ts)
-- ✅ Hook useHydrated para consistência de hydration
-- ✅ Fluxo de adjustment-result completado
-- ✅ Dados dinâmicos em payment-confirmed e refund-confirmed
-- ✅ Validação de FAL_API_KEY adicionada
-- ✅ Estrutura de API routes para pagamentos criada
-- ✅ Termos de Uso publicados (/termos)
-- ✅ Política de Privacidade publicada (/privacidade)
+### 🔴 PROBLEMAS CRÍTICOS IDENTIFICADOS (30/01/2025)
+
+#### Auditoria de Produto - Varredura Completa
+
+| # | Severidade | Problema | Arquivo | Impacto |
+|---|------------|----------|---------|---------|
+| 1 | 🔴 CRÍTICO | Race condition: crédito consumido APÓS navegação iniciar | `upload/page.tsx:32-45` | Trial infinito se usuário fechar aba |
+| 2 | 🔴 CRÍTICO | Créditos adicionados client-side SEM verificação de pagamento | `pix/page.tsx:105-117` | Usuário pode simular pagamento |
+| 3 | 🔴 CRÍTICO | Sem persistência server-side de créditos | `webhook/route.ts` | Créditos perdidos se limpar cache |
+| 4 | 🔴 CRÍTICO | Refund é apenas UI mockup, sem API real | `refund/page.tsx:23` | Reembolsos nunca processados |
+| 5 | 🔴 CRÍTICO | Sem validação de créditos no fluxo de ajuste | `adjust/page.tsx:36-57` | Ajustes ilimitados grátis |
+| 6 | 🟠 ALTO | Webhook signature bypass em dev | `abacate.ts:183-185` | Webhooks falsos aceitos |
+| 7 | 🟠 ALTO | Sem validação de metadata no webhook | `webhook/route.ts:120-125` | Fraude de créditos via metadata |
+| 8 | 🟠 ALTO | User com 0 créditos acessa /adjust | `adjust/page.tsx` | UX confusa, erro tardio |
+| 9 | 🟠 ALTO | Result page aceita URLs via params sem validação | `result/page.tsx:24-32` | Bypass de state management |
+| 10 | 🟡 MÉDIO | Valor de refund hardcoded (R$29.90) | `refund/page.tsx:15` | Fraude, valores incorretos |
+| 11 | 🟡 MÉDIO | PIX key validação apenas client-side | `refund/page.tsx:43-59` | Keys inválidos aceitos |
+| 12 | 🟡 MÉDIO | Sem timeout nas chamadas de API | `processing/page.tsx` | Página trava indefinidamente |
+
+---
+
+### 🛠️ CORREÇÕES APLICADAS (30/01/2025)
+
+**Prioridade P0 (Bloqueadores):**
+1. [x] Mover `consumeCredit()` para ANTES da navegação ✅ `upload/page.tsx`
+2. [x] Adicionar verificação dupla de pagamento antes de creditar ✅ `pix/page.tsx`
+3. [x] Adicionar persistência de pagamentos em localStorage ✅ `pix/page.tsx`
+4. [ ] Implementar API de refund real com integração Abacate Pay ⚠️ (UI pronta, API pendente)
+5. [x] Adicionar validação de créditos no fluxo de ajuste ✅ `adjust/page.tsx`
+
+**Prioridade P1 (Alta):**
+6. [x] Validar webhook metadata contra preço do plano ✅ `webhook/route.ts`
+7. [x] Adicionar guard de créditos antes de permitir acesso a /adjust ✅ `adjust/page.tsx`
+8. [ ] Implementar rate limiting nas APIs ⚠️ (requer middleware)
+9. [ ] Validar URLs na result page contra estado do usuário ⚠️ (complexo sem DB)
+
+**Prioridade P2 (Média):**
+10. [x] Buscar valor real do pagamento para refund ✅ `refund/page.tsx`
+11. [x] Validar PIX key client-side ✅ `refund/page.tsx`
+12. [x] Adicionar timeouts com AbortController ✅ `useRestore.ts`, `useAdjust.ts`
+
+**Segurança Webhook:**
+- [x] Rejeitar webhooks sem assinatura em produção ✅ `abacate.ts`
+- [x] Logar warnings de segurança para análise ✅ `webhook/route.ts`
+
+---
+
+### ✅ Implementações Recentes (30/01/2025)
+
+- ✅ Webhook handler para Abacate Pay (email de confirmação)
+- ✅ Email de welcome no cadastro
+- ✅ Email de restauração completa
+- ✅ Metadata com nome do cliente no PIX
+- ✅ Landing page com scroll animations
+- ✅ Watermark para downloads trial
+- ✅ Termos e Política de Privacidade
+
+---
+
+### ⚠️ Pendências de Integração
+
+| Integração | Status | Observação |
+|------------|--------|------------|
+| Abacate Pay (PIX) | 🟢 Código pronto | Precisa de `ABACATE_API_KEY` |
+| Resend (emails) | 🟢 Código pronto | Precisa de `RESEND_API_KEY` |
+| fal.ai (IA) | 🟢 Funcionando | Em produção |
+| AWS S3 | 🟢 Funcionando | Em produção |
+| PostHog | 🟢 Funcionando | Analytics completo |
+| Stripe (cartão) | 🔴 Não implementado | Decidido: apenas PIX por enquanto |
 
 ---
 
@@ -552,19 +609,28 @@ Meta: >20%
 - [x] Integração fal.ai funcionando
 - [x] Tela de processamento
 - [x] Resultado com slider antes/depois
-- [x] Download da foto
-- [ ] Checkout com PIX (Abacate Pay) ⚠️ UI pronta, integração pendente
+- [x] Download da foto (com watermark para trial)
+- [x] Checkout com PIX (Abacate Pay) - código pronto, precisa env vars
 - [x] Confirmação de pagamento (UI)
-- [x] Sistema de créditos (localStorage)
+- [x] Sistema de créditos (localStorage) ⚠️ PROBLEMA: não persistente server-side
 
 ### 10.2 Fase 2
 
 **Should Have:**
-- [ ] Checkout com cartão (Stripe) ⚠️ Não integrado
+- [ ] Checkout com cartão (Stripe) ❌ Decidido não implementar por enquanto
 - [x] Loop de restauração paga
-- [x] Fluxo de ajustes
-- [ ] Emails transacionais (Resend) ❌ Não implementado
+- [x] Fluxo de ajustes ⚠️ PROBLEMA: sem validação de créditos
+- [x] Emails transacionais (Resend) - código pronto, precisa env vars
 - [x] Analytics completo (PostHog)
+
+### 10.2.1 Correções de Robustez (NOVA FASE - P0)
+
+**Bloqueadores para Produção:**
+- [ ] Persistência server-side de créditos
+- [ ] Fix race condition no consumo de trial
+- [ ] Validação de créditos em ajustes
+- [ ] API de refund real
+- [ ] Validação de webhook metadata
 
 ### 10.3 Fase 3
 
@@ -728,13 +794,13 @@ NEXT_PUBLIC_APP_URL=
     /api
       /upload/route.ts              # ✅ Upload para S3
       /restore/route.ts             # ✅ Restauração via fal.ai
-      /adjust/route.ts              # ✅ Ajustes via fal.ai
-      /download/route.ts            # ✅ Proxy de download
+      /adjust/route.ts              # ✅ Ajustes via fal.ai (⚠️ sem validação créditos)
+      /download/route.ts            # ✅ Proxy de download com watermark
       /payment
-        /stripe/route.ts            # ⚠️ Placeholder - Stripe
-        /pix/route.ts               # ⚠️ Placeholder - Abacate Pay
-        /webhook/route.ts           # ⚠️ Placeholder - Webhooks
-      /email/route.ts               # ⚠️ Placeholder - Resend
+        /stripe/route.ts            # ❌ Não implementado (apenas PIX)
+        /pix/route.ts               # ✅ Geração PIX via Abacate Pay
+        /webhook/route.ts           # ✅ Webhook Abacate (⚠️ sem persist server)
+      /email/route.ts               # ✅ Envio de emails via Resend
   /components
     /ui                             # Componentes base (Button, Input, Card)
     /layout                         # Layout (Header, Stepper)
@@ -746,12 +812,13 @@ NEXT_PUBLIC_APP_URL=
   /lib
     /fal.ts                         # ✅ Integração fal.ai
     /s3.ts                          # ✅ Integração AWS S3
-    /storage.ts                     # ✅ LocalStorage utilities
+    /storage.ts                     # ✅ LocalStorage (⚠️ volátil, sem server-side)
     /analytics.ts                   # ✅ PostHog analytics
     /utils.ts                       # ✅ Utilitários
-    /stripe.ts                      # ⚠️ Placeholder
-    /abacate.ts                     # ⚠️ Placeholder
-    /resend.ts                      # ⚠️ Placeholder
+    /watermark.ts                   # ✅ Watermark para trial downloads
+    /stripe.ts                      # ❌ Não implementado (apenas PIX)
+    /abacate.ts                     # ✅ Integração Abacate Pay completa
+    /resend.ts                      # ✅ Integração Resend (4 templates)
   /hooks
     /useUser.ts                     # ✅ Estado do usuário/créditos
     /useUpload.ts                   # ✅ Upload de arquivos
@@ -807,18 +874,27 @@ interface Payment {
 
 ## 17. Checklist de Lançamento
 
-### Pré-Lançamento
+### Pré-Lançamento - Funcionalidades
 - [x] Landing page no ar
 - [x] Fluxo de trial funcionando
 - [x] Integração fal.ai testada
-- [ ] Pagamento PIX funcionando ⚠️ Integração Abacate Pay pendente
-- [ ] Pagamento Cartão funcionando ⚠️ Integração Stripe pendente
-- [ ] Emails transacionais configurados ❌ Resend não integrado
+- [x] Pagamento PIX (código pronto) - precisa `ABACATE_API_KEY`
+- [ ] Pagamento Cartão ❌ Não será implementado (apenas PIX)
+- [x] Emails transacionais (código pronto) - precisa `RESEND_API_KEY`
 - [x] Analytics implementado (PostHog completo)
 - [x] Testes em mobile
 - [x] Termos de uso publicados (/termos)
 - [x] Política de privacidade publicada (/privacidade)
 - [ ] WhatsApp de suporte ativo
+
+### Pré-Lançamento - Correções Críticas ✅
+- [x] Fix race condition trial (upload/page.tsx)
+- [x] Verificação dupla de pagamento (pix/page.tsx)
+- [x] Persistência de pagamentos em localStorage
+- [ ] Implementar API de refund real ⚠️ (UI pronta)
+- [x] Validação de créditos em ajustes
+- [ ] Rate limiting nas APIs ⚠️ (requer middleware)
+- [x] Timeout + retry logic
 
 ### Pós-Lançamento
 - [ ] Monitorar conversão trial → paid
@@ -839,6 +915,27 @@ interface Payment {
 
 ---
 
+---
+
+## 19. Histórico de Auditorias
+
+### Auditoria 30/01/2025 - Varredura Completa (PM Specialist)
+
+**Escopo:** Fluxos de trial, pagamento, ajuste, reembolso
+**Metodologia:** Análise de código + lógica de negócio
+
+**Resumo Executivo:**
+Produto funcionalmente ~85% completo, mas com falhas críticas de robustez e segurança que impedem lançamento seguro. Principais gaps: persistência de dados, validação de pagamentos, e tratamento de edge cases.
+
+**Problemas por Severidade:**
+- 🔴 CRÍTICO: 5 issues (race conditions, fraude de pagamento, refund fake)
+- 🟠 ALTO: 4 issues (validação, bypass de state)
+- 🟡 MÉDIO: 3 issues (UX, timeouts)
+
+**Recomendação:** Corrigir P0s antes de qualquer teste com usuários reais.
+
+---
+
 **Documento criado em:** Janeiro 2025
 **Última atualização:** 30 Janeiro 2025
-**Próxima revisão:** Após integração de pagamentos
+**Próxima revisão:** Após correções P0 críticas
