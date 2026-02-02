@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { cn } from "@/lib/utils";
 import Link from "next/link";
 import Image from "next/image";
-import { ImageIcon, Plus, LogOut, User, ChevronDown } from "lucide-react";
+import { ImageIcon, Plus, LogOut, User, ChevronDown, Images } from "lucide-react";
 import { useUser } from "@/hooks";
 import { useRouter, usePathname } from "next/navigation";
 
@@ -43,6 +43,11 @@ export function Header({ showCredits = false, credits: propCredits, className }:
   const handleAddCredits = () => {
     setIsMenuOpen(false);
     router.push("/checkout?source=header");
+  };
+
+  const handleGallery = () => {
+    setIsMenuOpen(false);
+    router.push("/dashboard");
   };
 
   // Close menu when clicking outside
@@ -121,6 +126,15 @@ export function Header({ showCredits = false, credits: propCredits, className }:
                         {user?.email}
                       </p>
                     </div>
+
+                    {/* Gallery option */}
+                    <button
+                      onClick={handleGallery}
+                      className="w-full flex items-center gap-2 px-4 py-2.5 text-sm text-ih-text hover:bg-ih-surface transition-colors"
+                    >
+                      <Images className="w-4 h-4 text-genea-green" />
+                      Minhas fotos
+                    </button>
 
                     {/* Add credits option */}
                     <button
