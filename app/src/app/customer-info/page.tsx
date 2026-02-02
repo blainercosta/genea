@@ -23,6 +23,7 @@ function CustomerInfoContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const planId = searchParams.get("plan") || "2";
+  const restorationId = searchParams.get("restoration");
   const [isChecking, setIsChecking] = useState(true);
 
   const plan = PLANS_MAP[planId];
@@ -31,15 +32,19 @@ function CustomerInfoContent() {
     // Check if user has email
     const user = getUser();
     if (!user?.email) {
-      router.push(`/start?plan=${planId}`);
+      const params = new URLSearchParams({ plan: planId });
+      if (restorationId) params.set("restoration", restorationId);
+      router.push(`/start?${params.toString()}`);
       return;
     }
     setIsChecking(false);
-  }, [router, planId]);
+  }, [router, planId, restorationId]);
 
   const handleSubmit = (data: { name: string; phone: string; taxId: string }) => {
     updateCustomerInfo(data);
-    router.push(`/pix?plan=${planId}`);
+    const params = new URLSearchParams({ plan: planId });
+    if (restorationId) params.set("restoration", restorationId);
+    router.push(`/pix?${params.toString()}`);
   };
 
   if (isChecking) {

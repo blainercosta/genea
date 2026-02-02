@@ -48,19 +48,27 @@ function PixContent() {
   const [planData, setPlanData] = useState<PlanData | null>(null);
 
   const planId = searchParams.get("plan") || "2";
+  const restorationId = searchParams.get("restoration");
+
+  // Helper to build URL with restoration ID
+  const buildUrl = (path: string, params: Record<string, string> = {}) => {
+    const urlParams = new URLSearchParams(params);
+    if (restorationId) urlParams.set("restoration", restorationId);
+    return `${path}?${urlParams.toString()}`;
+  };
 
   useEffect(() => {
     const user = getUser();
 
     // Check if user has email
     if (!user?.email) {
-      router.push(`/start?plan=${planId}`);
+      router.push(buildUrl("/start", { plan: planId }));
       return;
     }
 
     // Check if user has customer info for PIX
     if (!user.name || !user.phone || !user.taxId) {
-      router.push(`/customer-info?plan=${planId}`);
+      router.push(buildUrl("/customer-info", { plan: planId }));
       return;
     }
 
@@ -155,7 +163,9 @@ function PixContent() {
         photos: planData.photos.toString(),
         amount: planData.price.toString(),
         plan: planData.name,
+        planId: planData.id,
       });
+      if (restorationId) params.set("restoration", restorationId);
       router.push(`/payment-confirmed?${params.toString()}`);
     } catch (err) {
       console.error("Error verifying payment:", err);
@@ -168,7 +178,7 @@ function PixContent() {
   };
 
   const handleCancel = () => {
-    router.push(`/checkout?plan=${planId}`);
+    router.push(buildUrl("/checkout", { plan: planId }));
   };
 
   if (loading) {

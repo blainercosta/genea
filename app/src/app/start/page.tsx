@@ -25,6 +25,7 @@ function StartContent() {
   const { initialize } = useUser();
 
   const planId = searchParams.get("plan");
+  const restorationId = searchParams.get("restoration");
 
   useEffect(() => {
     analytics.startPageView();
@@ -49,7 +50,9 @@ function StartContent() {
 
     // If plan is specified, go to customer info to collect data for PIX
     if (planId) {
-      router.push(`/customer-info?plan=${planId}`);
+      const params = new URLSearchParams({ plan: planId });
+      if (restorationId) params.set("restoration", restorationId);
+      router.push(`/customer-info?${params.toString()}`);
     } else {
       router.push("/upload");
     }

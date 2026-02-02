@@ -12,6 +12,7 @@ function CheckoutContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const initialPlan = searchParams.get("plan") || "2";
+  const restorationId = searchParams.get("restoration");
   const [selectedPlanId, setSelectedPlanId] = useState<string>(initialPlan);
 
   useEffect(() => {
@@ -27,6 +28,13 @@ function CheckoutContent() {
     }
   };
 
+  // Build URL with optional restoration ID
+  const buildUrl = (path: string, planId: string) => {
+    const params = new URLSearchParams({ plan: planId });
+    if (restorationId) params.set("restoration", restorationId);
+    return `${path}?${params.toString()}`;
+  };
+
   const handleContinue = (planId: string) => {
     const plan = PLANS_MAP[planId];
     if (plan) {
@@ -36,18 +44,18 @@ function CheckoutContent() {
 
       // If no email, go to start page first
       if (!user?.email) {
-        router.push(`/start?plan=${planId}`);
+        router.push(buildUrl("/start", planId));
         return;
       }
 
       // If no customer info, go to customer-info page
       if (!user.name || !user.phone || !user.taxId) {
-        router.push(`/customer-info?plan=${planId}`);
+        router.push(buildUrl("/customer-info", planId));
         return;
       }
 
       // All data present, go directly to PIX
-      router.push(`/pix?plan=${planId}`);
+      router.push(buildUrl("/pix", planId));
       return;
     }
     router.push("/start?plan=2");

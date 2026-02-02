@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, Suspense } from "react";
+import { useEffect, useState, useRef, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Result } from "@/components/screens";
 import { useUser } from "@/hooks";
@@ -10,10 +10,12 @@ function ResultContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { isLoading, getRestoration, credits, getLatestRestoration } = useUser();
+  const autoDownloadTriggeredRef = useRef(false);
 
   const restorationId = searchParams.get("id");
   const originalUrlParam = searchParams.get("original");
   const restoredUrlParam = searchParams.get("restored");
+  const autoDownload = searchParams.get("autoDownload") === "true";
 
   // Get restoration data (including isTrial flag for watermark)
   const [restoration, setRestoration] = useState<{
@@ -56,6 +58,30 @@ function ResultContent() {
   // Use restoration's isTrial flag (captured at upload time, before consumeCredit)
   const isTrialRestoration = restoration?.isTrial ?? true;
   const isPaid = !isTrialRestoration;
+
+  // Auto-download when coming from payment confirmation
+  useEffect(() => {
+    if (!autoDownload || autoDownloadTriggeredRef.current) return;
+    if (!restoration?.restoredUrl || !isPaid) return;
+
+    autoDownloadTriggeredRef.current = true;
+
+    // Small delay to ensure UI is rendered first
+    const timer = setTimeout(() => {
+      analytics.downloadClick(false);
+
+      // Download without watermark (paid)
+      const downloadUrl = `/api/download?url=${encodeURIComponent(restoration.restoredUrl)}`;
+      const link = document.createElement("a");
+      link.href = downloadUrl;
+      link.download = `genea-restored-${Date.now()}.png`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    }, 500);
+
+    return () => clearTimeout(timer);
+  }, [autoDownload, restoration?.restoredUrl, isPaid]);
 
   const handleDownload = () => {
     if (!restoration?.restoredUrl) return;
@@ -109,16 +135,42 @@ function ResultContent() {
     router.push("/checkout?source=result");
   };
 
+  // Unlock just this photo - plan 1 (R$9.90)
+  const handleUnlockThisPhoto = () => {
+    analytics.upgradeClick("result_unlock_this");
+    // Pass restoration ID so we can redirect back after payment
+    const params = new URLSearchParams({
+      plan: "1",
+      source: "result",
+      ...(restorationId && { restoration: restorationId }),
+    });
+    router.push(`/checkout?${params.toString()}`);
+  };
+
+  // Get more photos - go to checkout to choose plan
+  const handleGetMorePhotos = () => {
+    analytics.upgradeClick("result_get_more");
+    // Pass restoration ID so we can redirect back after payment
+    const params = new URLSearchParams({
+      source: "result",
+      ...(restorationId && { restoration: restorationId }),
+    });
+    router.push(`/checkout?${params.toString()}`);
+  };
+
   return (
     <Result
       originalUrl={restoration?.originalUrl}
       restoredUrl={restoration?.restoredUrl}
       isPaid={isPaid}
       credits={credits}
+      restorationId={restorationId || undefined}
       onDownload={handleDownload}
       onRequestAdjustment={handleRequestAdjustment}
       onShare={handleShare}
       onUpgrade={handleUpgrade}
+      onUnlockThisPhoto={handleUnlockThisPhoto}
+      onGetMorePhotos={handleGetMorePhotos}
     />
   );
 }

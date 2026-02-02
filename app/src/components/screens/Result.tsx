@@ -12,10 +12,13 @@ interface ResultProps {
   restoredUrl?: string;
   isPaid?: boolean;
   credits?: number;
+  restorationId?: string;
   onDownload?: () => void;
   onRequestAdjustment?: () => void;
   onShare?: () => void;
   onUpgrade?: () => void;
+  onUnlockThisPhoto?: () => void;
+  onGetMorePhotos?: () => void;
 }
 
 const steps = [
@@ -29,10 +32,13 @@ export function Result({
   restoredUrl,
   isPaid = false,
   credits = 0,
+  restorationId,
   onDownload,
   onRequestAdjustment,
   onShare,
   onUpgrade,
+  onUnlockThisPhoto,
+  onGetMorePhotos,
 }: ResultProps) {
   // Prevent hydration mismatch - render consistent UI on first render
   // Always render as "trial" on server, then update to actual state on client
@@ -235,15 +241,26 @@ export function Result({
                       </p>
                     </div>
                   </div>
-                  <Link href="/checkout" className="w-full block">
-                    <Button
-                      variant="primary"
-                      size="lg"
-                      className="w-full bg-genea-amber hover:bg-genea-amber/90 border-genea-amber text-white font-semibold"
-                    >
-                      Desbloquear por R$ 9,90
-                    </Button>
-                  </Link>
+
+                  {/* Primary CTA: Unlock just this photo */}
+                  <Button
+                    variant="primary"
+                    size="lg"
+                    onClick={onUnlockThisPhoto}
+                    className="w-full bg-genea-amber hover:bg-genea-amber/90 border-genea-amber text-white font-semibold"
+                  >
+                    Alterar somente esta • R$ 9,90
+                  </Button>
+
+                  {/* Secondary CTA: Get more photos */}
+                  <Button
+                    variant="secondary"
+                    onClick={onGetMorePhotos}
+                    className="w-full bg-ih-surface hover:bg-ih-surface-warm"
+                  >
+                    Quero esta e outras
+                  </Button>
+
                   <p className="text-xs text-ih-text-muted text-center">
                     Pagamento único • Sem assinatura
                   </p>
