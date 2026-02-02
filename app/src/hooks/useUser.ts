@@ -126,13 +126,16 @@ export function useUser() {
   }, []);
 
   // Initialize user with email and sync from Supabase
-  const initialize = useCallback(async (email: string) => {
+  // Returns { user, isNewUser } to indicate if this is the first access
+  const initialize = useCallback(async (email: string): Promise<{ user: User; isNewUser: boolean }> => {
     // First create locally
     const newUser = initUser(email);
     setUser(newUser);
 
-    // Then sync from Supabase (fire and forget, will update state when done)
+    // Then sync from Supabase to check if user already exists
     const supabaseData = await syncFromSupabase(email);
+
+    // If Supabase has data, user already exists (not new)
     if (supabaseData) {
       const updatedUser: User = {
         ...newUser,
@@ -144,10 +147,11 @@ export function useUser() {
       };
       saveUser(updatedUser);
       setUser(updatedUser);
-      return updatedUser;
+      return { user: updatedUser, isNewUser: false };
     }
 
-    return newUser;
+    // No data from Supabase = new user (first access)
+    return { user: newUser, isNewUser: true };
   }, []);
 
   // Add credits to user

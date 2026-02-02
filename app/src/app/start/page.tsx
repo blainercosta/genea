@@ -32,18 +32,20 @@ function StartContent() {
 
   const handleSubmit = async (email: string) => {
     // Initialize user and sync from Supabase (to get existing credits)
-    await initialize(email);
+    const { isNewUser } = await initialize(email);
     identify(email);
     analytics.emailSubmit(email);
 
-    // Send welcome email (fire and forget)
-    fetch("/api/email", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ to: email, type: "welcome" }),
-    }).catch(() => {
-      // Ignore email errors - not critical
-    });
+    // Send welcome email only on first access (new user)
+    if (isNewUser) {
+      fetch("/api/email", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ to: email, type: "welcome" }),
+      }).catch(() => {
+        // Ignore email errors - not critical
+      });
+    }
 
     // If plan is specified, go to customer info to collect data for PIX
     if (planId) {
