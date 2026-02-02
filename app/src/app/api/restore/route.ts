@@ -33,7 +33,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    console.log("Starting restoration for:", imageUrl, isTrial ? "(trial - 1K)" : "(paid - 2K)");
+    console.log("Starting restoration for:", imageUrl, isTrial ? "(trial - 1K)" : "(paid - 2K)", "email:", email);
 
     // Get user from Supabase to save restoration record
     let userId: string | null = null;
@@ -52,8 +52,14 @@ export async function POST(request: NextRequest) {
         if (restoration) {
           restorationId = restoration.id;
           console.log("Created restoration record:", restorationId);
+        } else {
+          console.warn("Failed to create restoration record for user:", userId);
         }
+      } else {
+        console.warn("User not found in Supabase for email:", email);
       }
+    } else {
+      console.warn("No email provided - restoration will not be saved to Supabase");
     }
 
     // Restore photo via fal.ai (trial gets 1K, paid gets 2K resolution)

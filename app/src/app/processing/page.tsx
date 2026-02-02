@@ -9,9 +9,11 @@ import { analytics } from "@/lib/analytics";
 function ProcessingContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { user, updateRestoration, addAdjustment } = useUser();
+  const { user, isLoading, updateRestoration, addAdjustment } = useUser();
   const startTimeRef = useRef<number>(Date.now());
   const hasStartedRef = useRef(false);
+  // Store email in ref to avoid closure issues
+  const userEmailRef = useRef<string | undefined>(undefined);
 
   // Parse URL params
   const mode = searchParams.get("mode") || "restore";
@@ -120,14 +122,30 @@ function ProcessingContent() {
   // Determine current status based on mode
   const status = mode === "adjust" ? adjustStatus : restoreStatus;
 
-  // Start processing when component mounts (only once)
+  // Keep email ref updated
   useEffect(() => {
+    if (user?.email) {
+      userEmailRef.current = user.email;
+      console.log("[processing] userEmailRef updated:", user.email);
+    }
+  }, [user?.email]);
+
+  // Start processing when user data is loaded (only once)
+  useEffect(() => {
+    // Wait for user data to load before starting restoration
+    if (isLoading) {
+      console.log("[processing] Waiting for user data to load...");
+      return;
+    }
+
     if (!imageUrl || status !== "idle" || hasStartedRef.current) return;
 
     hasStartedRef.current = true;
     analytics.processingStart();
 
     const decodedUrl = decodeURIComponent(imageUrl);
+    const email = userEmailRef.current || user?.email;
+    console.log("[processing] Starting restore with email:", email);
 
     if (mode === "adjust" && adjustments.length > 0) {
       const decodedNote = customNote ? decodeURIComponent(customNote) : undefined;
@@ -135,9 +153,9 @@ function ProcessingContent() {
     } else {
       // Pass isTrial flag for resolution selection (trial=1K, paid=2K)
       // Pass email to save restoration to Supabase
-      restore(decodedUrl, isTrial, user?.email);
+      restore(decodedUrl, isTrial, email);
     }
-  }, [imageUrl, status, mode, adjustments, customNote, restore, adjust, isTrial]);
+  }, [imageUrl, status, mode, adjustments, customNote, restore, adjust, isTrial, isLoading, user?.email]);
 
   const previewUrl = imageUrl ? decodeURIComponent(imageUrl) : undefined;
 
