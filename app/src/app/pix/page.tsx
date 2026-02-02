@@ -40,7 +40,7 @@ function LoadingScreen() {
 function PixContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { addCredits } = useUser();
+  const { addCredits, syncCredits } = useUser();
 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -126,8 +126,14 @@ function PixContent() {
         return;
       }
 
-      // All validations passed - add credits
+      // All validations passed - sync credits from Supabase (webhook already added them)
       analytics.paymentComplete(planData.id, planData.price, "pix");
+
+      // Sync credits from Supabase (webhook should have added them)
+      // This ensures localStorage is updated with the credits from the database
+      await syncCredits();
+
+      // Also add locally as fallback (in case webhook hasn't processed yet)
       addCredits(planData.photos);
 
       // Store payment record in localStorage for audit trail

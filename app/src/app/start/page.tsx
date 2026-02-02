@@ -31,7 +31,8 @@ function StartContent() {
   }, []);
 
   const handleSubmit = async (email: string) => {
-    initialize(email);
+    // Initialize user and sync from Supabase (to get existing credits)
+    await initialize(email);
     identify(email);
     analytics.emailSubmit(email);
 
