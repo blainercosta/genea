@@ -12,3 +12,4 @@ export { RequestRefund } from "./RequestRefund";
 export { RefundConfirmation } from "./RefundConfirmation";
 export { GenericError } from "./GenericError";
 export { LandingPage } from "./LandingPage";
+export { Dashboard } from "./Dashboard";

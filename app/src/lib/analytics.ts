@@ -141,6 +141,12 @@ export const analytics = {
   refundConfirmationView: () => track("refund_confirmation_view"),
 
   // ============================================
+  // DASHBOARD
+  // ============================================
+  dashboardView: (restorationCount: number, credits: number) =>
+    track("dashboard_view", { restoration_count: restorationCount, credits }),
+
+  // ============================================
   // ERRORS
   // ============================================
   errorPageView: (errorType?: string) => track("error_page_view", { error_type: errorType }),

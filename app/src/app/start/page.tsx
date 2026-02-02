@@ -33,7 +33,7 @@ function StartContent() {
 
   const handleSubmit = async (email: string) => {
     // Initialize user and sync from Supabase (to get existing credits)
-    const { isNewUser } = await initialize(email);
+    const { isNewUser, user } = await initialize(email);
     identify(email);
     analytics.emailSubmit(email);
 
@@ -53,9 +53,18 @@ function StartContent() {
       const params = new URLSearchParams({ plan: planId });
       if (restorationId) params.set("restoration", restorationId);
       router.push(`/customer-info?${params.toString()}`);
-    } else {
-      router.push("/upload");
+      return;
     }
+
+    // Returning user with history: go to dashboard
+    const hasHistory = !isNewUser && user.restorations && user.restorations.length > 0;
+    if (hasHistory) {
+      router.push("/dashboard");
+      return;
+    }
+
+    // New user or user without history: go to upload
+    router.push("/upload");
   };
 
   return <EmailCapture onSubmit={handleSubmit} />;

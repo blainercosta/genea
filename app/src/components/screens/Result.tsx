@@ -1,9 +1,9 @@
 "use client";
 
 import { useState, useRef, useCallback, useEffect } from "react";
-import { Download, RefreshCcw, Share2, Sparkles, Lock, CheckCircle2, MoveHorizontal } from "lucide-react";
+import { Download, RefreshCcw, Share2, Sparkles, Lock, MoveHorizontal } from "lucide-react";
 import { Header, Stepper } from "@/components/layout";
-import { Button, Card } from "@/components/ui";
+import { Button } from "@/components/ui";
 import { cn } from "@/lib/utils";
 import Link from "next/link";
 
@@ -83,24 +83,8 @@ export function Result({
       <Header showCredits={showAsPaid} credits={credits} />
       <Stepper steps={steps} />
 
-      <main className="flex-1 p-6 pb-12">
-        <div className="max-w-2xl mx-auto flex flex-col gap-8">
-          {/* Success header */}
-          <div className="flex flex-col items-center gap-3 text-center">
-            <div className="w-12 h-12 rounded-full bg-genea-green/10 flex items-center justify-center">
-              <CheckCircle2 className="w-6 h-6 text-genea-green" />
-            </div>
-            <h1 className="text-2xl md:text-3xl font-semibold text-ih-text">
-              {showAsPaid ? "Mais uma memória salva!" : "Olha como ficou!"}
-            </h1>
-            <p className="text-ih-text-secondary max-w-md">
-              {showAsPaid
-                ? "Arraste para comparar. Baixe ou solicite ajustes."
-                : "Arraste para comparar. Desbloqueie para baixar sem marca d'água."
-              }
-            </p>
-          </div>
-
+      <main className="flex-1 px-4 pt-2 pb-8">
+        <div className="max-w-lg mx-auto flex flex-col gap-5">
           {/* Before/After Slider - Main highlight */}
           <div className="w-full">
             <div
@@ -178,24 +162,24 @@ export function Result({
             </div>
 
             {/* Hint text */}
-            <p className="text-center text-sm text-ih-text-muted mt-3">
-              Arraste o controle para comparar
+            <p className="text-center text-xs text-ih-text-muted mt-2">
+              Arraste para comparar
             </p>
           </div>
 
-          {/* Action buttons */}
-          <div className="flex flex-col gap-4 w-full">
+          {/* Action buttons - prominent CTAs */}
+          <div className="flex flex-col gap-3 w-full">
             {showAsPaid ? (
               <>
-                <Button onClick={onDownload} className="w-full gap-2" size="lg">
-                  <Download className="w-4 h-4" />
+                <Button onClick={onDownload} className="w-full gap-2 h-14 text-base font-semibold shadow-lg" size="lg">
+                  <Download className="w-5 h-5" />
                   Baixar foto restaurada
                 </Button>
-                <div className="flex gap-3">
+                <div className="flex gap-2">
                   <Button
                     variant="secondary"
                     onClick={onRequestAdjustment}
-                    className="flex-1 gap-2 bg-ih-surface hover:bg-ih-surface-warm"
+                    className="flex-1 gap-2 h-12"
                   >
                     <RefreshCcw className="w-4 h-4" />
                     Ajustar
@@ -203,7 +187,7 @@ export function Result({
                   <Button
                     variant="secondary"
                     onClick={onShare}
-                    className="flex-1 gap-2 bg-ih-surface hover:bg-ih-surface-warm"
+                    className="flex-1 gap-2 h-12"
                   >
                     <Share2 className="w-4 h-4" />
                     Compartilhar
@@ -212,7 +196,7 @@ export function Result({
                 <Link href="/upload" className="w-full">
                   <Button
                     variant="secondary"
-                    className="w-full gap-2 bg-transparent hover:bg-ih-surface-warm text-ih-text-secondary"
+                    className="w-full gap-2 h-11 text-ih-text-secondary"
                   >
                     <Sparkles className="w-4 h-4" />
                     Restaurar outra foto
@@ -226,50 +210,37 @@ export function Result({
               </>
             ) : (
               <>
-                {/* Upsell CTA */}
-                <Card variant="warm" className="p-5 flex flex-col gap-4 border-2 border-genea-amber/40">
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-full bg-genea-amber/10 flex items-center justify-center flex-shrink-0">
-                      <Lock className="w-5 h-5 text-genea-amber" />
-                    </div>
-                    <div>
-                      <h3 className="font-semibold text-ih-text">
-                        Quer sem marca d&apos;água?
-                      </h3>
-                      <p className="text-sm text-ih-text-secondary">
-                        Download em alta qualidade + ajustes ilimitados
-                      </p>
-                    </div>
-                  </div>
+                {/* Primary CTA: Unlock this photo */}
+                <Button
+                  size="lg"
+                  onClick={onUnlockThisPhoto}
+                  className="w-full h-14 text-base bg-genea-green hover:bg-genea-green/90 border-genea-green text-white font-semibold shadow-lg"
+                >
+                  <Lock className="w-5 h-5 mr-2" />
+                  Desbloquear por R$ 9,90
+                </Button>
 
-                  {/* Primary CTA: Unlock just this photo */}
-                  <Button
-                    variant="primary"
-                    size="lg"
-                    onClick={onUnlockThisPhoto}
-                    className="w-full bg-genea-amber hover:bg-genea-amber/90 border-genea-amber text-white font-semibold"
-                  >
-                    Alterar somente esta • R$ 9,90
-                  </Button>
+                {/* Secondary CTA: Get more photos */}
+                <Button
+                  variant="secondary"
+                  onClick={onGetMorePhotos}
+                  className="w-full h-12"
+                >
+                  Quero mais fotos (desconto)
+                </Button>
 
-                  {/* Secondary CTA: Get more photos */}
-                  <Button
-                    variant="secondary"
-                    onClick={onGetMorePhotos}
-                    className="w-full bg-ih-surface hover:bg-ih-surface-warm"
-                  >
-                    Quero esta e outras
-                  </Button>
-
-                  <p className="text-xs text-ih-text-muted text-center">
-                    Pagamento único • Sem assinatura
-                  </p>
-                </Card>
+                <div className="flex items-center justify-center gap-4 text-xs text-ih-text-muted">
+                  <span>Pagamento único</span>
+                  <span>•</span>
+                  <span>Alta qualidade</span>
+                  <span>•</span>
+                  <span>Ajustes ilimitados</span>
+                </div>
 
                 <Button
                   variant="secondary"
                   onClick={onDownload}
-                  className="w-full gap-2 bg-ih-surface hover:bg-ih-surface-warm"
+                  className="w-full gap-2 h-11 text-ih-text-muted"
                 >
                   <Download className="w-4 h-4" />
                   Baixar com marca d&apos;água
