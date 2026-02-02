@@ -60,15 +60,25 @@ export function Navbar() {
           ))}
         </div>
 
-        {/* CTA Button */}
-        <Link href="/start" className="hidden sm:flex">
-          <Button size="sm">Testar Grátis</Button>
-        </Link>
+        {/* CTA Buttons */}
+        <div className="hidden sm:flex items-center gap-3">
+          <Link href="/login">
+            <Button size="sm" variant="secondary">Entrar</Button>
+          </Link>
+          <Link href="/start">
+            <Button size="sm">Testar Grátis</Button>
+          </Link>
+        </div>
 
-        {/* Mobile CTA */}
-        <Link href="/start" className="sm:hidden">
-          <Button size="sm">Testar</Button>
-        </Link>
+        {/* Mobile CTAs */}
+        <div className="sm:hidden flex items-center gap-2">
+          <Link href="/login">
+            <Button size="sm" variant="secondary">Entrar</Button>
+          </Link>
+          <Link href="/start">
+            <Button size="sm">Testar</Button>
+          </Link>
+        </div>
       </div>
     </nav>
   );

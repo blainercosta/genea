@@ -1,4 +1,5 @@
 export { EmailCapture } from "./EmailCapture";
+export { LoginCapture } from "./LoginCapture";
 export { CustomerInfo } from "./CustomerInfo";
 export { PhotoUpload } from "./PhotoUpload";
 export { Processing } from "./Processing";
