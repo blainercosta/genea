@@ -30,6 +30,20 @@ export function reset() {
 }
 
 /**
+ * Capture an exception for error tracking
+ */
+export function captureException(error: Error, properties?: EventProperties) {
+  if (typeof window !== "undefined") {
+    posthog.capture("$exception", {
+      $exception_message: error.message,
+      $exception_type: error.name,
+      $exception_stack_trace_raw: error.stack,
+      ...properties,
+    });
+  }
+}
+
+/**
  * Analytics helper with typed events for the entire funnel
  */
 export const analytics = {

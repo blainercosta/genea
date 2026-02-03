@@ -14,9 +14,20 @@ export function PostHogProvider({ children }: { children: React.ReactNode }) {
         posthog.init(key, {
           api_host: host,
           person_profiles: "identified_only",
+          // Pageview & navigation tracking
           capture_pageview: true,
           capture_pageleave: true,
-          autocapture: false,
+          // Autocapture: clicks, inputs, form submissions
+          autocapture: true,
+          // Session Replay: watch user sessions
+          session_recording: {
+            maskAllInputs: false,
+            maskInputOptions: {
+              password: true,
+            },
+          },
+          // Heatmaps: dead clicks & rage clicks
+          capture_dead_clicks: true,
         });
       }
     }
