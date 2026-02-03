@@ -38,7 +38,8 @@ const timelineSteps = [
 
 export function ProblemSection() {
   const { ref: titleRef, isVisible: titleVisible } = useScrollAnimation();
-  const { ref: timelineRef, isVisible: timelineVisible } = useScrollAnimation();
+  const { ref: timelineDesktopRef, isVisible: timelineDesktopVisible } = useScrollAnimation();
+  const { ref: timelineMobileRef, isVisible: timelineMobileVisible } = useScrollAnimation();
   const { ref: calloutRef, isVisible: calloutVisible } = useScrollAnimation();
 
   return (
@@ -56,14 +57,14 @@ export function ProblemSection() {
         </h2>
 
         {/* Desktop Timeline */}
-        <div ref={timelineRef} className="hidden md:block relative mb-12">
+        <div ref={timelineDesktopRef} className="hidden md:block relative mb-12">
           {/* Connecting Line */}
           <div
             className={cn(
               "absolute top-[96px] left-0 right-0 h-0.5 border-t-2 border-dashed border-ih-border-strong opacity-0 transition-opacity duration-700",
-              timelineVisible && "opacity-100"
+              timelineDesktopVisible && "opacity-100"
             )}
-            style={{ transitionDelay: timelineVisible ? "400ms" : "0ms" }}
+            style={{ transitionDelay: timelineDesktopVisible ? "400ms" : "0ms" }}
           />
 
           <div className="grid grid-cols-4 gap-6">
@@ -72,9 +73,9 @@ export function ProblemSection() {
                 key={step.year}
                 className={cn(
                   "relative flex flex-col items-center opacity-0",
-                  timelineVisible && "animate-fade-up"
+                  timelineDesktopVisible && "animate-fade-up"
                 )}
-                style={{ animationDelay: timelineVisible ? `${index * 100}ms` : "0ms" }}
+                style={{ animationDelay: timelineDesktopVisible ? `${index * 100}ms` : "0ms" }}
               >
                 {/* Photo */}
                 <div className="relative w-36 aspect-[3/4] rounded-xl overflow-hidden bg-ih-surface shadow-card-sm mb-4 transition-transform duration-300 hover:scale-105">
@@ -106,15 +107,15 @@ export function ProblemSection() {
         </div>
 
         {/* Mobile Timeline */}
-        <div className="md:hidden space-y-6 mb-12">
+        <div ref={timelineMobileRef} className="md:hidden space-y-6 mb-12">
           {timelineSteps.map((step, index) => (
             <div
               key={step.year}
               className={cn(
                 "relative flex items-center gap-4 opacity-0",
-                timelineVisible && "animate-slide-right"
+                timelineMobileVisible && "animate-slide-right"
               )}
-              style={{ animationDelay: timelineVisible ? `${index * 100}ms` : "0ms" }}
+              style={{ animationDelay: timelineMobileVisible ? `${index * 100}ms` : "0ms" }}
             >
               {/* Photo */}
               <div className="relative w-20 aspect-[3/4] rounded-xl overflow-hidden bg-ih-surface shadow-card-sm flex-shrink-0">

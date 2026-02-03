@@ -7,7 +7,8 @@ import { cn } from "@/lib/utils";
 
 export function GenealogySection() {
   const { ref: textRef, isVisible: textVisible } = useScrollAnimation();
-  const { ref: illustrationRef, isVisible: illustrationVisible } = useScrollAnimation();
+  const { ref: illustrationMobileRef, isVisible: illustrationMobileVisible } = useScrollAnimation();
+  const { ref: illustrationDesktopRef, isVisible: illustrationDesktopVisible } = useScrollAnimation();
 
   return (
     <section className="py-16 md:py-24 px-4 md:px-6 bg-ih-surface-warm">
@@ -15,12 +16,13 @@ export function GenealogySection() {
         <div className="grid gap-10 lg:grid-cols-2 lg:gap-16 items-center">
           {/* Mobile: Illustration first */}
           <div
+            ref={illustrationMobileRef}
             className={cn(
               "lg:hidden opacity-0",
-              illustrationVisible && "animate-scale-in"
+              illustrationMobileVisible && "animate-scale-in"
             )}
           >
-            <FamilyTreeIllustration ref={illustrationRef} />
+            <FamilyTreeIllustration />
           </div>
 
           {/* Text Column */}
@@ -84,10 +86,10 @@ export function GenealogySection() {
 
           {/* Desktop: Illustration */}
           <div
-            ref={illustrationRef}
+            ref={illustrationDesktopRef}
             className={cn(
               "hidden lg:block opacity-0",
-              illustrationVisible && "animate-slide-left"
+              illustrationDesktopVisible && "animate-slide-left"
             )}
           >
             <FamilyTreeIllustration />

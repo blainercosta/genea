@@ -30,7 +30,8 @@ const testimonials = [
 export function TestimonialsSection() {
   const [currentIndex, setCurrentIndex] = useState(0);
   const { ref: titleRef, isVisible: titleVisible } = useScrollAnimation();
-  const { ref: cardsRef, isVisible: cardsVisible } = useScrollAnimation();
+  const { ref: cardsDesktopRef, isVisible: cardsDesktopVisible } = useScrollAnimation();
+  const { ref: cardsMobileRef, isVisible: cardsMobileVisible } = useScrollAnimation();
 
   const nextSlide = () => {
     setCurrentIndex((prev) => (prev + 1) % testimonials.length);
@@ -55,15 +56,15 @@ export function TestimonialsSection() {
         </h2>
 
         {/* Desktop Grid */}
-        <div ref={cardsRef} className="hidden md:grid md:grid-cols-3 gap-8">
+        <div ref={cardsDesktopRef} className="hidden md:grid md:grid-cols-3 gap-8">
           {testimonials.map((testimonial, index) => (
             <div
               key={testimonial.name}
               className={cn(
                 "opacity-0",
-                cardsVisible && "animate-fade-up"
+                cardsDesktopVisible && "animate-fade-up"
               )}
-              style={{ animationDelay: cardsVisible ? `${index * 150}ms` : "0ms" }}
+              style={{ animationDelay: cardsDesktopVisible ? `${index * 150}ms` : "0ms" }}
             >
               <TestimonialCard testimonial={testimonial} />
             </div>
@@ -71,11 +72,11 @@ export function TestimonialsSection() {
         </div>
 
         {/* Mobile Carousel */}
-        <div className="md:hidden">
+        <div ref={cardsMobileRef} className="md:hidden">
           <div
             className={cn(
               "relative opacity-0",
-              cardsVisible && "animate-scale-in"
+              cardsMobileVisible && "animate-scale-in"
             )}
           >
             <TestimonialCard testimonial={testimonials[currentIndex]} />
