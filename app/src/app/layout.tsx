@@ -27,6 +27,11 @@ export default function RootLayout({
 }) {
   return (
     <html lang="pt-BR" className={ibmPlexSans.variable}>
+      <head>
+        {/* Preconnect to S3 for faster image loading */}
+        <link rel="dns-prefetch" href="https://genea-photos.s3.sa-east-1.amazonaws.com" />
+        <link rel="preconnect" href="https://genea-photos.s3.sa-east-1.amazonaws.com" crossOrigin="anonymous" />
+      </head>
       <body className={ibmPlexSans.className}>
         <PostHogProvider>{children}</PostHogProvider>
       </body>

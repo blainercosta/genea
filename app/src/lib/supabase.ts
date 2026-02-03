@@ -202,6 +202,44 @@ export async function getUserByEmail(email: string): Promise<DbUser | null> {
 }
 
 /**
+ * User with restorations - combined type for JOIN query
+ */
+export interface DbUserWithRestorations extends DbUser {
+  restorations: DbRestoration[];
+}
+
+/**
+ * Get user by email with restorations in a single query (avoids N+1)
+ */
+export async function getUserWithRestorations(email: string): Promise<DbUserWithRestorations | null> {
+  const supabase = getSupabase();
+  if (!supabase) return null;
+
+  const { data, error } = await supabase
+    .from("users")
+    .select(`
+      *,
+      restorations (*)
+    `)
+    .eq("email", email.toLowerCase().trim())
+    .single();
+
+  if (error || !data) {
+    return null;
+  }
+
+  // Sort restorations by created_at descending
+  const user = data as DbUserWithRestorations;
+  if (user.restorations) {
+    user.restorations.sort((a, b) =>
+      new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+    );
+  }
+
+  return user;
+}
+
+/**
  * Update user credits
  */
 export async function updateUserCredits(userId: string, credits: number): Promise<boolean> {

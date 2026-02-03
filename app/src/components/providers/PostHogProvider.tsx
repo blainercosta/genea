@@ -19,14 +19,10 @@ export function PostHogProvider({ children }: { children: React.ReactNode }) {
           capture_pageleave: true,
           // Autocapture: clicks, inputs, form submissions
           autocapture: true,
-          // Session Replay: watch user sessions
-          session_recording: {
-            maskAllInputs: false,
-            maskInputOptions: {
-              password: true,
-            },
-          },
-          // Heatmaps: dead clicks & rage clicks
+          // Session Replay: disabled by default for performance
+          // Enable via PostHog dashboard feature flags when needed
+          disable_session_recording: true,
+          // Heatmaps: dead clicks & rage clicks (lightweight)
           capture_dead_clicks: true,
         });
       }

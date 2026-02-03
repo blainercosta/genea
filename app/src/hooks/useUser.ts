@@ -211,15 +211,24 @@ export function useUser() {
   // Use a credit for restoration (syncs with Supabase)
   const consumeCredit = useCallback(() => {
     const currentUser = getUser();
+    if (!currentUser) return false;
 
     // First consume locally
     const success = consumeCreditFromStorage();
     if (success) {
-      setUser(getUser());
+      // Update state directly without re-reading localStorage
+      setUser(prev => {
+        if (!prev) return prev;
+        // Trial consumption: mark trial as used
+        if (!prev.isTrialUsed) {
+          return { ...prev, isTrialUsed: true };
+        }
+        // Credit consumption: decrement credits
+        return { ...prev, credits: Math.max(0, prev.credits - 1) };
+      });
 
       // Sync to Supabase in background
-      if (currentUser?.email) {
-        // Check if this was a trial consumption
+      if (currentUser.email) {
         if (!currentUser.isTrialUsed) {
           syncUseTrial(currentUser.email);
         } else {
@@ -246,14 +255,30 @@ export function useUser() {
   // Add a new restoration
   const createRestoration = useCallback((restoration: Restoration) => {
     addRestoration(restoration);
-    setUser(getUser());
+    // Update state directly without re-reading localStorage
+    setUser(prev => {
+      if (!prev) return prev;
+      return {
+        ...prev,
+        restorations: [restoration, ...prev.restorations],
+      };
+    });
   }, []);
 
   // Update a restoration
   const updateUserRestoration = useCallback(
     (restorationId: string, updates: Partial<Restoration>) => {
       updateRestoration(restorationId, updates);
-      setUser(getUser());
+      // Update state directly without re-reading localStorage
+      setUser(prev => {
+        if (!prev) return prev;
+        return {
+          ...prev,
+          restorations: prev.restorations.map(r =>
+            r.id === restorationId ? { ...r, ...updates } : r
+          ),
+        };
+      });
     },
     []
   );
@@ -314,7 +339,18 @@ export function useUser() {
     (restorationId: string, adjustment: Adjustment) => {
       const success = addAdjustmentToRestoration(restorationId, adjustment);
       if (success) {
-        setUser(getUser());
+        // Update state directly without re-reading localStorage
+        setUser(prev => {
+          if (!prev) return prev;
+          return {
+            ...prev,
+            restorations: prev.restorations.map(r =>
+              r.id === restorationId
+                ? { ...r, adjustments: [...(r.adjustments || []), adjustment] }
+                : r
+            ),
+          };
+        });
       }
       return success;
     },

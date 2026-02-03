@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useRef, useCallback } from "react";
+import Image from "next/image";
 import { cn } from "@/lib/utils";
 import { MoveHorizontal } from "lucide-react";
 
@@ -11,6 +12,7 @@ interface BeforeAfterSliderProps {
   afterAlt?: string;
   caption?: string;
   className?: string;
+  priority?: boolean;
 }
 
 export function BeforeAfterSlider({
@@ -20,6 +22,7 @@ export function BeforeAfterSlider({
   afterAlt = "Foto restaurada",
   caption,
   className,
+  priority = false,
 }: BeforeAfterSliderProps) {
   const [sliderPosition, setSliderPosition] = useState(50);
   const [isDragging, setIsDragging] = useState(false);
@@ -61,13 +64,16 @@ export function BeforeAfterSlider({
       >
         {/* After image (full width, underneath) */}
         <div className="absolute inset-0">
-          <img
+          <Image
             src={afterImage}
             alt={afterAlt}
-            className="h-full w-full object-cover"
+            fill
+            sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+            className="object-cover"
             draggable={false}
+            priority={priority}
           />
-          <div className="absolute bottom-3 right-3 rounded-full bg-genea-green px-3 py-1 text-xs font-medium text-white">
+          <div className="absolute bottom-3 right-3 rounded-full bg-genea-green px-3 py-1 text-xs font-medium text-white z-10">
             Depois
           </div>
         </div>
@@ -77,13 +83,16 @@ export function BeforeAfterSlider({
           className="absolute inset-0 overflow-hidden"
           style={{ clipPath: `inset(0 ${100 - sliderPosition}% 0 0)` }}
         >
-          <img
+          <Image
             src={beforeImage}
             alt={beforeAlt}
-            className="h-full w-full object-cover"
+            fill
+            sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+            className="object-cover"
             draggable={false}
+            priority={priority}
           />
-          <div className="absolute bottom-3 left-3 rounded-full bg-ih-text/80 px-3 py-1 text-xs font-medium text-white">
+          <div className="absolute bottom-3 left-3 rounded-full bg-ih-text/80 px-3 py-1 text-xs font-medium text-white z-10">
             Antes
           </div>
         </div>

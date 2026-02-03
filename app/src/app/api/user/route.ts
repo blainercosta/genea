@@ -3,6 +3,7 @@ import { isValidEmail } from "@/lib/validation";
 import {
   isSupabaseConfigured,
   getUserByEmail,
+  getUserWithRestorations,
   getOrCreateUser,
   consumeUserCredit,
   markTrialUsed,
@@ -30,6 +31,7 @@ function formatRestoration(r: DbRestoration) {
 /**
  * GET /api/user?email=xxx
  * Get user data including credits from Supabase
+ * Uses JOIN to fetch user + restorations in single query (avoids N+1)
  */
 export async function GET(request: NextRequest) {
   try {
@@ -44,19 +46,17 @@ export async function GET(request: NextRequest) {
     }
 
     if (!isSupabaseConfigured()) {
-      // Return empty user if Supabase not configured (fallback to localStorage)
       return NextResponse.json({ user: null, source: "localStorage" });
     }
 
-    const user = await getUserByEmail(email.toLowerCase().trim());
+    // Single query with JOIN - no N+1
+    const user = await getUserWithRestorations(email.toLowerCase().trim());
 
     if (!user) {
       return NextResponse.json({ user: null });
     }
 
-    // Fetch user's restorations from Supabase
-    const dbRestorations = await getRestorationsByUserId(user.id);
-    const restorations = dbRestorations.map(formatRestoration);
+    const restorations = (user.restorations || []).map(formatRestoration);
 
     return NextResponse.json({
       user: {

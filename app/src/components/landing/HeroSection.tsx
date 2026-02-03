@@ -118,6 +118,7 @@ export function HeroSection() {
               afterImage="https://genea-photos.s3.sa-east-1.amazonaws.com/landing/hero-new.png"
               beforeAlt="Foto antiga danificada"
               afterAlt="Foto restaurada"
+              priority
             />
           </div>
         </div>

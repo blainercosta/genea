@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useRef, useCallback, useEffect } from "react";
+import Image from "next/image";
 import { Download, RefreshCcw, Share2, Sparkles, Lock, MoveHorizontal } from "lucide-react";
 import { Header, Stepper } from "@/components/layout";
 import { Button } from "@/components/ui";
@@ -98,21 +99,23 @@ export function Result({
               {/* After image (full width, underneath) */}
               <div className="absolute inset-0">
                 {restoredUrl ? (
-                  <img
+                  <Image
                     src={restoredUrl}
                     alt="Foto restaurada"
-                    className="h-full w-full object-cover"
+                    fill
+                    sizes="(max-width: 512px) 100vw, 512px"
+                    className="object-cover"
                     draggable={false}
                   />
                 ) : (
                   <div className="h-full w-full bg-ih-surface-warm" />
                 )}
-                <div className="absolute bottom-4 right-4 rounded-full bg-genea-green px-3 py-1.5 text-xs font-semibold text-white shadow-lg">
+                <div className="absolute bottom-4 right-4 rounded-full bg-genea-green px-3 py-1.5 text-xs font-semibold text-white shadow-lg z-10">
                   Depois
                 </div>
                 {/* Preview indicator for trial */}
                 {!showAsPaid && (
-                  <div className="absolute top-4 right-4 flex items-center gap-1.5 rounded-full bg-black/60 px-3 py-1.5">
+                  <div className="absolute top-4 right-4 flex items-center gap-1.5 rounded-full bg-black/60 px-3 py-1.5 z-10">
                     <Lock className="w-3 h-3 text-white/90" />
                     <span className="text-xs font-medium text-white/90">Preview</span>
                   </div>
@@ -125,16 +128,18 @@ export function Result({
                 style={{ clipPath: `inset(0 ${100 - sliderPosition}% 0 0)` }}
               >
                 {originalUrl ? (
-                  <img
+                  <Image
                     src={originalUrl}
                     alt="Foto original"
-                    className="h-full w-full object-cover"
+                    fill
+                    sizes="(max-width: 512px) 100vw, 512px"
+                    className="object-cover"
                     draggable={false}
                   />
                 ) : (
                   <div className="h-full w-full bg-ih-surface" />
                 )}
-                <div className="absolute bottom-4 left-4 rounded-full bg-ih-text/80 px-3 py-1.5 text-xs font-semibold text-white shadow-lg">
+                <div className="absolute bottom-4 left-4 rounded-full bg-ih-text/80 px-3 py-1.5 text-xs font-semibold text-white shadow-lg z-10">
                   Antes
                 </div>
               </div>
