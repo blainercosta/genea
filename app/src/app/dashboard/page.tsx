@@ -55,9 +55,10 @@ export default function DashboardPage() {
     if (!restoration.restoredUrl) return;
 
     try {
-      // Fetch the image and trigger download
+      // Add trial param if restoration is not paid (applies watermark)
+      const trialParam = restoration.isTrial ? "&trial=true" : "";
       const response = await fetch(
-        `/api/download?url=${encodeURIComponent(restoration.restoredUrl)}`
+        `/api/download?url=${encodeURIComponent(restoration.restoredUrl)}${trialParam}`
       );
       const blob = await response.blob();
       const url = window.URL.createObjectURL(blob);

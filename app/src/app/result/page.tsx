@@ -52,8 +52,13 @@ function ResultContent() {
         isTrial: true,
       });
       analytics.resultView(true);
+      return;
     }
-  }, [restorationId, originalUrlParam, restoredUrlParam, getRestoration, getLatestRestoration, isLoading]);
+
+    // No restoration found after loading - redirect to upload
+    // This handles edge cases like expired localStorage or invalid IDs
+    router.push("/upload");
+  }, [restorationId, originalUrlParam, restoredUrlParam, getRestoration, getLatestRestoration, isLoading, router]);
 
   // Show loading state while fetching restoration data
   const isDataLoading = isLoading || (!restoration && (restorationId || originalUrlParam));
@@ -116,20 +121,30 @@ function ResultContent() {
   const handleShare = async () => {
     if (!restoration?.restoredUrl) return;
 
+    // For trial users, share the landing page instead of the direct image URL
+    // This prevents bypassing the watermark and drives traffic to the product
+    const shareUrl = isTrialRestoration
+      ? window.location.origin
+      : restoration.restoredUrl;
+
+    const shareText = isTrialRestoration
+      ? "Descobri esse site incrível que restaura fotos antigas com IA! Olha o resultado:"
+      : "Olha como ficou minha foto antiga depois de restaurar no Genea!";
+
     if (navigator.share) {
       try {
         analytics.shareClick("native");
         await navigator.share({
           title: "Minha foto restaurada no Genea",
-          text: "Olha como ficou minha foto antiga depois de restaurar no Genea!",
-          url: restoration.restoredUrl,
+          text: shareText,
+          url: shareUrl,
         });
-      } catch (err) {
+      } catch {
         // User cancelled or error
       }
     } else {
       analytics.shareClick("clipboard");
-      navigator.clipboard.writeText(restoration.restoredUrl);
+      navigator.clipboard.writeText(shareUrl);
     }
   };
 

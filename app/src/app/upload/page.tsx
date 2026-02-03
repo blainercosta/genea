@@ -39,7 +39,6 @@ export default function UploadPage() {
       const restorationId = `r_${Date.now()}`;
       // Read from ref - if null (shouldn't happen), default to checking isPaid
       const wasTrial = wasTrialRef.current ?? !isPaid;
-      console.log("[upload] onSuccess - wasTrial:", wasTrial, "ref.current:", wasTrialRef.current);
       // Save isTrial in restoration record for watermark logic in result page
       createRestoration({
         id: restorationId,
@@ -57,7 +56,6 @@ export default function UploadPage() {
     },
     onError: (err) => {
       analytics.uploadError(typeof err === "string" ? err : "Unknown error");
-      console.error("Upload error:", err);
       // Note: Credit was consumed before upload, but restoration failed
       // In a real system with DB, we'd rollback here
     },
@@ -65,10 +63,7 @@ export default function UploadPage() {
 
   const handleUpload = async (file: File) => {
     // Validate hydration completed
-    if (!mounted) {
-      console.error("Page not ready");
-      return;
-    }
+    if (!mounted) return;
 
     if (!canRestore()) {
       analytics.upgradeClick("upload");
@@ -76,7 +71,7 @@ export default function UploadPage() {
       return;
     }
 
-    // CRITICAL FIX: Consume credit BEFORE starting upload to prevent race condition
+    // Consume credit BEFORE starting upload to prevent race condition
     // This ensures trial is marked as used even if user closes tab during upload
     const success = consumeCredit();
     if (!success) {
@@ -86,9 +81,7 @@ export default function UploadPage() {
     }
     setCreditConsumed(true);
     // Capture trial state BEFORE upload - ref ensures callback gets current value
-    const isTrialUpload = !isPaid;
-    wasTrialRef.current = isTrialUpload;
-    console.log("[upload] handleUpload - isPaid:", isPaid, "isTrialUpload:", isTrialUpload);
+    wasTrialRef.current = !isPaid;
 
     setCurrentFile(file);
     analytics.uploadStart("gallery");

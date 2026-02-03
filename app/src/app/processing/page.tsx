@@ -22,7 +22,6 @@ function ProcessingContent() {
   const adjustmentsParam = searchParams.get("adjustments");
   const customNote = searchParams.get("note");
   const isTrial = searchParams.get("trial") === "true";
-  console.log("[processing] isTrial from URL:", isTrial, "raw param:", searchParams.get("trial"));
 
   // Parse adjustments from JSON - memoize to avoid re-renders
   const adjustments = useMemo<string[]>(
@@ -43,7 +42,6 @@ function ProcessingContent() {
           restoredUrl: url,
           isTrial: isTrial,
         });
-        console.log("[processing] updateRestoration with isTrial:", isTrial);
       }
 
       // Send restoration complete email (fire and forget)
@@ -126,18 +124,12 @@ function ProcessingContent() {
   useEffect(() => {
     if (user?.email) {
       userEmailRef.current = user.email;
-      console.log("[processing] userEmailRef updated:", user.email);
     }
   }, [user?.email]);
 
   // Start processing when user data is loaded (only once)
   useEffect(() => {
-    // Wait for user data to load before starting restoration
-    if (isLoading) {
-      console.log("[processing] Waiting for user data to load...");
-      return;
-    }
-
+    if (isLoading) return;
     if (!imageUrl || status !== "idle" || hasStartedRef.current) return;
 
     hasStartedRef.current = true;
@@ -145,7 +137,6 @@ function ProcessingContent() {
 
     const decodedUrl = decodeURIComponent(imageUrl);
     const email = userEmailRef.current || user?.email;
-    console.log("[processing] Starting restore with email:", email);
 
     if (mode === "adjust" && adjustments.length > 0) {
       const decodedNote = customNote ? decodeURIComponent(customNote) : undefined;

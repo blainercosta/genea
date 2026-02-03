@@ -143,8 +143,10 @@ Email digitado → GET /api/user?email=xxx → Supabase retorna/cria user → lo
 4. /payment-confirmed?restoration=xxx:
    - syncCredits() (aguarda)
    - getRestoration(xxx)
-   - updateRestoration(xxx, {isTrial: false})
-   - consumeCredit() ← consome 1 crédito aqui
+   - markRestorationAsPaid(xxx) no Supabase ← persiste entre devices
+   - updateRestoration(xxx, {isTrial: false}) localStorage
+   - consumeCredit() local
+   - syncConsumeCredit() no Supabase ← await para consistência
 5. Redireciona /result?id=xxx&autoDownload=true
 ```
 
@@ -194,9 +196,10 @@ Response:
 ```
 
 ### POST /api/user
-Actions: `sync`, `consumeCredit`, `useTrial`, `updateProfile`
+Actions: `sync`, `consumeCredit`, `useTrial`, `updateProfile`, `markRestorationPaid`
 ```json
 {"action": "consumeCredit", "email": "user@email.com"}
+{"action": "markRestorationPaid", "email": "user@email.com", "restorationId": "uuid"}
 ```
 
 ---
@@ -206,12 +209,13 @@ Actions: `sync`, `consumeCredit`, `useTrial`, `updateProfile`
 1. Trial: 1 foto grátis por email, marca d'água, resolução 1K
 2. Créditos não expiram, persistem entre dispositivos (Supabase)
 3. Desbloquear foto consome 1 crédito no momento do unlock
-4. Ajustes ilimitados por foto até aprovar (max 3 por restauração)
+4. Máximo de 3 ajustes por restauração (somente para fotos pagas)
 5. Timeout processamento: 5 minutos
 6. Polling PIX: max 200 tentativas (~10 minutos)
 7. Formatos aceitos: JPG, PNG, HEIC
 8. Tamanho máximo: 20MB
 9. Reembolso: até 24h via PIX (UI pronta, API básica)
+10. Share de foto trial compartilha URL da landing (não expõe imagem full quality)
 
 ---
 
@@ -281,6 +285,17 @@ Actions: `sync`, `consumeCredit`, `useTrial`, `updateProfile`
 - Restoration ID preservado em fallback do checkout
 - Header global: créditos visíveis, botão "Adicionar" quando credits=0
 - Apenas PIX implementado (sem ícones de cartão)
+
+### Persistência de Dados
+
+| Dado | Supabase | localStorage |
+|------|----------|--------------|
+| Créditos | ✅ (fonte de verdade) | ✅ (cache) |
+| is_trial_used | ✅ | ✅ |
+| Restaurações | ✅ | ✅ |
+| is_paid (restauração) | ✅ | ✅ |
+| Ajustes | ❌ (TODO) | ✅ |
+| Perfil (nome, tel, cpf) | ✅ | ✅ |
 
 ---
 
