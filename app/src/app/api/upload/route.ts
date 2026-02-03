@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { writeFile, mkdir } from "fs/promises";
 import path from "path";
 import { checkRateLimit, RATE_LIMITS } from "@/lib/rateLimit";
+import { validateFileMagicBytes } from "@/lib/fileValidation";
 
 export const runtime = "nodejs";
 
@@ -11,7 +12,7 @@ const ALLOWED_TYPES = ["image/jpeg", "image/png", "image/heic", "image/heif"];
 
 export async function POST(request: NextRequest) {
   // Check rate limit
-  const rateLimitResponse = checkRateLimit(request, "upload", RATE_LIMITS.upload);
+  const rateLimitResponse = await checkRateLimit(request, "upload", RATE_LIMITS.upload);
   if (rateLimitResponse) return rateLimitResponse;
 
   try {
@@ -25,7 +26,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Validate file type
+    // Validate declared MIME type
     if (!ALLOWED_TYPES.includes(file.type)) {
       return NextResponse.json(
         {
@@ -50,6 +51,21 @@ export async function POST(request: NextRequest) {
     // Convert file to buffer
     const bytes = await file.arrayBuffer();
     const buffer = Buffer.from(bytes);
+
+    // SECURITY: Validate magic bytes match declared MIME type
+    if (!validateFileMagicBytes(buffer, file.type)) {
+      console.warn("SECURITY: File magic bytes mismatch", {
+        declaredType: file.type,
+        fileName: file.name,
+      });
+      return NextResponse.json(
+        {
+          success: false,
+          error: "Arquivo inválido ou corrompido.",
+        },
+        { status: 400 }
+      );
+    }
 
     // Check if S3 is configured
     const hasS3 = process.env.AWS_ACCESS_KEY_ID && process.env.AWS_SECRET_ACCESS_KEY;

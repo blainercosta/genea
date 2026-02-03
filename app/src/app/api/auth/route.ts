@@ -51,7 +51,7 @@ export async function POST(request: NextRequest) {
 
     if (action === "send") {
       // Rate limit: 3 code sends per minute
-      const rateLimitResponse = checkRateLimit(
+      const rateLimitResponse = await checkRateLimit(
         request,
         "authCode",
         RATE_LIMITS.authCode
@@ -93,7 +93,7 @@ export async function POST(request: NextRequest) {
 
     if (action === "verify") {
       // Rate limit: 5 verify attempts per minute
-      const rateLimitResponse = checkRateLimit(
+      const rateLimitResponse = await checkRateLimit(
         request,
         "authVerify",
         RATE_LIMITS.authVerify

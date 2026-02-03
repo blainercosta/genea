@@ -12,7 +12,7 @@ export const maxDuration = 60;
  */
 export async function POST(request: NextRequest) {
   // Check rate limit
-  const rateLimitResponse = checkRateLimit(request, "adjust", RATE_LIMITS.adjust);
+  const rateLimitResponse = await checkRateLimit(request, "adjust", RATE_LIMITS.adjust);
   if (rateLimitResponse) return rateLimitResponse;
 
   try {

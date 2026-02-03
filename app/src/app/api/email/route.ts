@@ -51,7 +51,7 @@ type EmailRequest =
 
 export async function POST(request: NextRequest) {
   // Rate limit: 5 emails per minute per IP
-  const rateLimitResponse = checkRateLimit(request, "email", RATE_LIMITS.email);
+  const rateLimitResponse = await checkRateLimit(request, "email", RATE_LIMITS.email);
   if (rateLimitResponse) return rateLimitResponse;
 
   try {

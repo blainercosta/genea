@@ -18,7 +18,7 @@ import { validatePixKey, isValidEmail } from "@/lib/validation";
  */
 export async function POST(request: NextRequest) {
   // Check rate limit
-  const rateLimitResponse = checkRateLimit(request, "refund", RATE_LIMITS.refund);
+  const rateLimitResponse = await checkRateLimit(request, "refund", RATE_LIMITS.refund);
   if (rateLimitResponse) return rateLimitResponse;
 
   try {

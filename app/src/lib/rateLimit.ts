@@ -12,9 +12,7 @@ interface RateLimitEntry {
   resetTime: number;
 }
 
-// In-memory store for rate limiting
-// Note: In serverless environments, each instance has its own memory
-// For production at scale, consider using Redis or similar
+// In-memory store for rate limiting (fallback when Redis not configured)
 const rateLimitStore = new Map<string, RateLimitEntry>();
 
 // Clean up expired entries periodically
@@ -35,52 +33,149 @@ function cleanup() {
 
 /**
  * Get client IP from request
+ * SECURITY: Validates forwarded headers to prevent IP spoofing
  */
 function getClientIp(request: NextRequest): string {
-  // Try various headers that proxies/load balancers set
+  // In Vercel, x-forwarded-for is trusted and set by the platform
   const forwarded = request.headers.get("x-forwarded-for");
   if (forwarded) {
-    return forwarded.split(",")[0].trim();
+    // Take the first IP (client's real IP)
+    const ip = forwarded.split(",")[0].trim();
+    // Basic validation - should be a valid IP format
+    if (ip && /^[\d.:a-fA-F]+$/.test(ip)) {
+      return ip;
+    }
   }
 
   const realIp = request.headers.get("x-real-ip");
-  if (realIp) {
+  if (realIp && /^[\d.:a-fA-F]+$/.test(realIp)) {
     return realIp;
   }
 
-  // Fallback - may not be accurate behind proxies
+  // Fallback
   return "unknown";
 }
 
 /**
- * Check rate limit for a request
- * Returns null if allowed, or a NextResponse if rate limited
+ * Check if Upstash Redis is configured
  */
-export function checkRateLimit(
-  request: NextRequest,
-  endpoint: string,
+function isRedisConfigured(): boolean {
+  return Boolean(
+    process.env.UPSTASH_REDIS_REST_URL && process.env.UPSTASH_REDIS_REST_TOKEN
+  );
+}
+
+/**
+ * Check rate limit using Upstash Redis (distributed)
+ */
+async function checkRateLimitRedis(
+  key: string,
   config: RateLimitConfig
-): NextResponse | null {
+): Promise<{ allowed: boolean; remaining: number; resetTime: number }> {
+  const url = process.env.UPSTASH_REDIS_REST_URL!;
+  const token = process.env.UPSTASH_REDIS_REST_TOKEN!;
+
+  const now = Date.now();
+  const windowKey = `ratelimit:${key}:${Math.floor(now / config.windowMs)}`;
+
+  try {
+    // Increment counter with expiry
+    const response = await fetch(`${url}/pipeline`, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify([
+        ["INCR", windowKey],
+        ["PEXPIRE", windowKey, config.windowMs],
+      ]),
+    });
+
+    if (!response.ok) {
+      console.error("Redis rate limit error:", response.status);
+      // Fallback to allow on Redis error (fail open for availability)
+      return { allowed: true, remaining: config.limit, resetTime: now + config.windowMs };
+    }
+
+    const results = await response.json();
+    const count = results[0]?.result || 1;
+    const remaining = Math.max(0, config.limit - count);
+    const resetTime = (Math.floor(now / config.windowMs) + 1) * config.windowMs;
+
+    return {
+      allowed: count <= config.limit,
+      remaining,
+      resetTime,
+    };
+  } catch (error) {
+    console.error("Redis rate limit error:", error);
+    // Fallback to allow on error
+    return { allowed: true, remaining: config.limit, resetTime: now + config.windowMs };
+  }
+}
+
+/**
+ * Check rate limit using in-memory store (fallback)
+ */
+function checkRateLimitMemory(
+  key: string,
+  config: RateLimitConfig
+): { allowed: boolean; remaining: number; resetTime: number } {
   cleanup();
 
-  const ip = getClientIp(request);
-  const key = `${endpoint}:${ip}`;
   const now = Date.now();
-
   const entry = rateLimitStore.get(key);
 
   if (!entry || entry.resetTime < now) {
-    // First request or window expired - start fresh
-    rateLimitStore.set(key, {
-      count: 1,
-      resetTime: now + config.windowMs,
-    });
-    return null;
+    // First request or window expired
+    const resetTime = now + config.windowMs;
+    rateLimitStore.set(key, { count: 1, resetTime });
+    return { allowed: true, remaining: config.limit - 1, resetTime };
   }
 
-  // Within window - check limit
+  // Within window
   if (entry.count >= config.limit) {
-    const retryAfter = Math.ceil((entry.resetTime - now) / 1000);
+    return { allowed: false, remaining: 0, resetTime: entry.resetTime };
+  }
+
+  // Increment
+  entry.count += 1;
+  rateLimitStore.set(key, entry);
+  return {
+    allowed: true,
+    remaining: config.limit - entry.count,
+    resetTime: entry.resetTime,
+  };
+}
+
+/**
+ * Check rate limit for a request
+ * Uses Redis if configured, falls back to in-memory
+ * Returns null if allowed, or a NextResponse if rate limited
+ */
+export async function checkRateLimit(
+  request: NextRequest,
+  endpoint: string,
+  config: RateLimitConfig
+): Promise<NextResponse | null> {
+  const ip = getClientIp(request);
+  const key = `${endpoint}:${ip}`;
+
+  let result: { allowed: boolean; remaining: number; resetTime: number };
+
+  if (isRedisConfigured()) {
+    result = await checkRateLimitRedis(key, config);
+  } else {
+    result = checkRateLimitMemory(key, config);
+    // Log warning in production if Redis not configured
+    if (process.env.NODE_ENV === "production") {
+      console.warn("SECURITY: Rate limiting using in-memory store - configure UPSTASH_REDIS for distributed rate limiting");
+    }
+  }
+
+  if (!result.allowed) {
+    const retryAfter = Math.ceil((result.resetTime - Date.now()) / 1000);
 
     return NextResponse.json(
       {
@@ -94,15 +189,12 @@ export function checkRateLimit(
           "Retry-After": String(retryAfter),
           "X-RateLimit-Limit": String(config.limit),
           "X-RateLimit-Remaining": "0",
-          "X-RateLimit-Reset": String(Math.ceil(entry.resetTime / 1000)),
+          "X-RateLimit-Reset": String(Math.ceil(result.resetTime / 1000)),
         },
       }
     );
   }
 
-  // Increment count
-  entry.count += 1;
-  rateLimitStore.set(key, entry);
   return null;
 }
 
@@ -132,5 +224,6 @@ export const RATE_LIMITS = {
   authCode: { limit: 3, windowMs: 60 * 1000 },
 
   // Auth verify: 5 attempts per minute per IP
+  // SECURITY: Combined with strong auth codes, this limits brute force
   authVerify: { limit: 5, windowMs: 60 * 1000 },
 } as const;

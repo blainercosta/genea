@@ -46,7 +46,7 @@ export async function sendAuthCodeEmail(
                 Use o código abaixo para acessar sua conta:
               </p>
               <div style="background-color: #f0fdf4; border-radius: 12px; padding: 24px; margin-bottom: 24px; text-align: center;">
-                <p style="margin: 0; font-size: 36px; font-weight: 700; letter-spacing: 8px; color: #16a34a; font-family: monospace;">
+                <p style="margin: 0; font-size: 32px; font-weight: 700; letter-spacing: 4px; color: #16a34a; font-family: monospace;">
                   ${code}
                 </p>
               </div>

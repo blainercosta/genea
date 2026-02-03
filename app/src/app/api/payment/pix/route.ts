@@ -25,7 +25,7 @@ import { isValidEmail, isValidCPF, isValidPhone } from "@/lib/validation";
  */
 export async function POST(request: NextRequest) {
   // Check rate limit
-  const rateLimitResponse = checkRateLimit(request, "pix", RATE_LIMITS.pix);
+  const rateLimitResponse = await checkRateLimit(request, "pix", RATE_LIMITS.pix);
   if (rateLimitResponse) return rateLimitResponse;
 
   try {

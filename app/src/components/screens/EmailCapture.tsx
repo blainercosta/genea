@@ -92,8 +92,8 @@ export function EmailCapture({ onSubmit, onAuthenticated }: EmailCaptureProps) {
     e.preventDefault();
     setError(null);
 
-    if (code.length !== 6) {
-      setError("Digite o código de 6 dígitos");
+    if (code.length !== 8) {
+      setError("Digite o código de 8 caracteres");
       return;
     }
 
@@ -163,8 +163,8 @@ export function EmailCapture({ onSubmit, onAuthenticated }: EmailCaptureProps) {
   };
 
   const handleCodeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    // Only allow digits
-    const value = e.target.value.replace(/\D/g, "").slice(0, 6);
+    // Only allow alphanumeric characters, convert to uppercase
+    const value = e.target.value.replace(/[^A-Za-z0-9]/g, "").toUpperCase().slice(0, 8);
     setCode(value);
   };
 
@@ -214,7 +214,7 @@ export function EmailCapture({ onSubmit, onAuthenticated }: EmailCaptureProps) {
                 Digite o código
               </h1>
               <p className="text-ih-text-secondary">
-                Enviamos um código de 6 dígitos para{" "}
+                Enviamos um código de 8 caracteres para{" "}
                 <span className="font-medium text-ih-text">{email}</span>
               </p>
             </div>
@@ -224,13 +224,14 @@ export function EmailCapture({ onSubmit, onAuthenticated }: EmailCaptureProps) {
               <div className="flex flex-col gap-2">
                 <Input
                   type="text"
-                  inputMode="numeric"
-                  placeholder="000000"
+                  inputMode="text"
+                  placeholder="ABCD1234"
                   value={code}
                   onChange={handleCodeChange}
-                  className="text-center text-2xl tracking-[0.5em] font-mono"
-                  maxLength={6}
+                  className="text-center text-2xl tracking-[0.3em] font-mono uppercase"
+                  maxLength={8}
                   autoFocus
+                  autoCapitalize="characters"
                 />
                 {error && <p className="text-sm text-red-500 text-center">{error}</p>}
               </div>
@@ -238,7 +239,7 @@ export function EmailCapture({ onSubmit, onAuthenticated }: EmailCaptureProps) {
               <Button
                 type="submit"
                 size="lg"
-                disabled={code.length !== 6 || isLoading}
+                disabled={code.length !== 8 || isLoading}
                 className="w-full"
               >
                 {isLoading ? (

@@ -17,7 +17,7 @@ export const maxDuration = 60; // Allow up to 60 seconds for restoration
  */
 export async function POST(request: NextRequest) {
   // Check rate limit
-  const rateLimitResponse = checkRateLimit(request, "restore", RATE_LIMITS.restore);
+  const rateLimitResponse = await checkRateLimit(request, "restore", RATE_LIMITS.restore);
   if (rateLimitResponse) return rateLimitResponse;
 
   let restorationId: string | null = null;

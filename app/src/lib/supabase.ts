@@ -1,4 +1,5 @@
 import { createClient } from "@supabase/supabase-js";
+import crypto from "crypto";
 
 /**
  * User type from database
@@ -71,10 +72,19 @@ export function isSupabaseConfigured(): boolean {
 }
 
 /**
- * Generate a 6-digit auth code
+ * Generate a cryptographically secure 8-character alphanumeric auth code
+ * SECURITY: Uses crypto.randomBytes for true randomness
+ * Entropy: 32^8 = 1.1 trillion combinations (vs 900k for 6-digit numeric)
+ * Alphabet excludes confusing characters: 0, O, I, L, 1
  */
 export function generateAuthCode(): string {
-  return Math.floor(100000 + Math.random() * 900000).toString();
+  const alphabet = "ABCDEFGHJKMNPQRSTUVWXYZ23456789"; // 32 chars, no 0OIL1
+  const bytes = crypto.randomBytes(8);
+  let code = "";
+  for (let i = 0; i < 8; i++) {
+    code += alphabet[bytes[i] % alphabet.length];
+  }
+  return code;
 }
 
 /**

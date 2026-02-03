@@ -243,14 +243,8 @@ export function validateWebhookSignature(
     }
   }
 
-  // Método 3: Em desenvolvimento, permite sem validação
-  const isProduction = process.env.NODE_ENV === "production";
-  if (!isProduction) {
-    console.warn("DEV MODE: Webhook validation bypassed");
-    return true;
-  }
-
-  // Em produção, se nenhuma validação passou, rejeita
+  // SECURITY: Sempre rejeita se nenhuma validação passou
+  // NUNCA fazer bypass em nenhum ambiente
   console.error("Webhook validation failed: no valid signature or secret");
   return false;
 }

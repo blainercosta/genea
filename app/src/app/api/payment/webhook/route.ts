@@ -190,47 +190,55 @@ async function handlePaymentConfirmed(event: AbacateWebhookEvent) {
 
   // SECURITY: Validate metadata exists
   if (!planId || !email) {
-    console.error("SECURITY WARNING: Payment missing required metadata", {
+    console.error("SECURITY: Payment missing required metadata - not adding credits", {
       pixId: event.data.id,
       planId,
       email,
     });
-    // Still process (payment was made) but log for investigation
+    // Don't add credits without proper metadata - requires manual investigation
+    return;
   }
 
   // Busca dados do plano
-  const plan = planId ? getPlanById(planId) : null;
-  const creditsToAdd = plan?.photos || parseInt(photos || "0");
+  const plan = getPlanById(planId);
 
-  // SECURITY: Validate amount matches plan price
-  if (plan) {
-    const expectedAmount = plan.price;
-    const tolerance = 0.01; // Allow 1 cent tolerance for rounding
-
-    if (Math.abs(amountInReais - expectedAmount) > tolerance) {
-      console.error("SECURITY WARNING: Payment amount mismatch!", {
-        pixId: event.data.id,
-        receivedAmount: amountInReais,
-        expectedAmount,
-        planId,
-        email,
-      });
-      // Log but still process - payment was made, investigate later
-    }
-
-    console.log("Plano adquirido:", {
-      name: plan.name,
-      photos: plan.photos,
-      price: plan.price,
-      amountPaid: amountInReais,
-      validated: Math.abs(amountInReais - expectedAmount) <= tolerance,
-    });
-  } else if (planId) {
-    console.error("SECURITY WARNING: Unknown planId in webhook", {
+  // SECURITY: Validate plan exists
+  if (!plan) {
+    console.error("SECURITY: Unknown planId in webhook - not adding credits", {
       pixId: event.data.id,
       planId,
+      amountReceived: amountInReais,
     });
+    // Don't add credits for unknown plans - requires manual investigation
+    return;
   }
+
+  const creditsToAdd = plan.photos;
+  const expectedAmount = plan.price;
+  const tolerance = 0.10; // Allow 10 cents tolerance for rounding
+
+  // SECURITY: Validate amount matches plan price
+  if (Math.abs(amountInReais - expectedAmount) > tolerance) {
+    console.error("SECURITY: Payment amount mismatch - not adding credits", {
+      pixId: event.data.id,
+      receivedAmount: amountInReais,
+      expectedAmount,
+      difference: Math.abs(amountInReais - expectedAmount),
+      planId,
+      email,
+    });
+    // Don't add credits for mismatched amounts - requires manual investigation
+    // The payment was received, so customer support needs to handle this case
+    return;
+  }
+
+  console.log("Plano adquirido:", {
+    name: plan.name,
+    photos: plan.photos,
+    price: plan.price,
+    amountPaid: amountInReais,
+    validated: true,
+  });
 
   // Adiciona créditos no Supabase
   if (email && isSupabaseConfigured()) {
