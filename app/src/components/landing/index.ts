@@ -12,3 +12,4 @@ export { FinalCTASection } from "./FinalCTASection";
 export { Footer } from "./Footer";
 export { MobileStickyButton } from "./MobileStickyButton";
 export { BeforeAfterSlider } from "./BeforeAfterSlider";
+export { AuthRedirect } from "./AuthRedirect";
