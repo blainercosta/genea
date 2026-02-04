@@ -1,16 +1,20 @@
 "use client";
 
-import { useEffect, useState, useRef, Suspense } from "react";
+import { useEffect, useState, useRef, Suspense, useCallback } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Result } from "@/components/screens";
+import { EmailGateModal } from "@/components/ui";
 import { useUser } from "@/hooks";
-import { analytics } from "@/lib/analytics";
+import { analytics, identify } from "@/lib/analytics";
 
 function ResultContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { isLoading, getRestoration, credits, getLatestRestoration } = useUser();
+  const { isLoading, getRestoration, credits, getLatestRestoration, user, setEmail, isAnonymous } = useUser();
   const autoDownloadTriggeredRef = useRef(false);
+
+  // Email gate modal state
+  const [showEmailGate, setShowEmailGate] = useState(false);
 
   const restorationId = searchParams.get("id");
   const originalUrlParam = searchParams.get("original");
@@ -91,15 +95,16 @@ function ResultContent() {
     return () => clearTimeout(timer);
   }, [autoDownload, restoration?.restoredUrl, isPaid]);
 
-  const handleDownload = () => {
+  // Trigger download (called after email verification for anonymous users)
+  const triggerDownload = useCallback((withWatermark: boolean) => {
     if (!restoration?.restoredUrl) return;
 
     // Track download
-    analytics.downloadClick(isTrialRestoration);
+    analytics.downloadClick(withWatermark);
 
     // Use proxy API to download (avoids CORS issues with S3)
     // Add trial param to apply watermark for trial users
-    const downloadUrl = `/api/download?url=${encodeURIComponent(restoration.restoredUrl)}${isTrialRestoration ? "&trial=true" : ""}`;
+    const downloadUrl = `/api/download?url=${encodeURIComponent(restoration.restoredUrl)}${withWatermark ? "&trial=true" : ""}`;
 
     // Create download link
     const link = document.createElement("a");
@@ -108,6 +113,41 @@ function ResultContent() {
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
+  }, [restoration?.restoredUrl]);
+
+  const handleDownload = () => {
+    if (!restoration?.restoredUrl) return;
+
+    // For trial users who are anonymous, show email gate first
+    if (isTrialRestoration && isAnonymous()) {
+      setShowEmailGate(true);
+      return;
+    }
+
+    // For authenticated trial users or paid users, download directly
+    triggerDownload(isTrialRestoration);
+  };
+
+  // Handle email verification from gate modal
+  const handleEmailVerified = async (email: string) => {
+    // Set email for the anonymous user and sync with Supabase
+    const { isNewUser } = await setEmail(email);
+    identify(email);
+
+    // Send welcome email for new users
+    if (isNewUser) {
+      fetch("/api/email", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ to: email, type: "welcome" }),
+      }).catch(() => {
+        // Ignore email errors - not critical
+      });
+    }
+
+    // Close modal and trigger download
+    setShowEmailGate(false);
+    triggerDownload(true); // Still trial, so with watermark
   };
 
   const handleRequestAdjustment = () => {
@@ -156,24 +196,34 @@ function ResultContent() {
   // Unlock just this photo - plan 1 (R$9.90)
   const handleUnlockThisPhoto = () => {
     analytics.upgradeClick("result_unlock_this");
-    // Pass restoration ID so we can redirect back after payment
     const params = new URLSearchParams({
       plan: "1",
       source: "result",
       ...(restorationId && { restoration: restorationId }),
     });
-    router.push(`/checkout?${params.toString()}`);
+
+    // Anonymous users need to provide email before checkout (payment requires email)
+    if (isAnonymous()) {
+      router.push(`/start?${params.toString()}`);
+    } else {
+      router.push(`/checkout?${params.toString()}`);
+    }
   };
 
   // Get more photos - go to checkout to choose plan
   const handleGetMorePhotos = () => {
     analytics.upgradeClick("result_get_more");
-    // Pass restoration ID so we can redirect back after payment
     const params = new URLSearchParams({
       source: "result",
       ...(restorationId && { restoration: restorationId }),
     });
-    router.push(`/checkout?${params.toString()}`);
+
+    // Anonymous users need to provide email before checkout (payment requires email)
+    if (isAnonymous()) {
+      router.push(`/start?${params.toString()}`);
+    } else {
+      router.push(`/checkout?${params.toString()}`);
+    }
   };
 
   // Show loading state while data is being fetched
@@ -182,19 +232,26 @@ function ResultContent() {
   }
 
   return (
-    <Result
-      originalUrl={restoration?.originalUrl}
-      restoredUrl={restoration?.restoredUrl}
-      isPaid={isPaid}
-      credits={credits}
-      restorationId={restorationId || undefined}
-      onDownload={handleDownload}
-      onRequestAdjustment={handleRequestAdjustment}
-      onShare={handleShare}
-      onUpgrade={handleUpgrade}
-      onUnlockThisPhoto={handleUnlockThisPhoto}
-      onGetMorePhotos={handleGetMorePhotos}
-    />
+    <>
+      <Result
+        originalUrl={restoration?.originalUrl}
+        restoredUrl={restoration?.restoredUrl}
+        isPaid={isPaid}
+        credits={credits}
+        restorationId={restorationId || undefined}
+        onDownload={handleDownload}
+        onRequestAdjustment={handleRequestAdjustment}
+        onShare={handleShare}
+        onUpgrade={handleUpgrade}
+        onUnlockThisPhoto={handleUnlockThisPhoto}
+        onGetMorePhotos={handleGetMorePhotos}
+      />
+      <EmailGateModal
+        isOpen={showEmailGate}
+        onClose={() => setShowEmailGate(false)}
+        onEmailVerified={handleEmailVerified}
+      />
+    </>
   );
 }
 

@@ -173,7 +173,7 @@ export function ProblemSection() {
           )}
           style={{ animationDelay: calloutVisible ? "200ms" : "0ms" }}
         >
-          <Link href="/start">
+          <Link href="/try">
             <Button variant="secondary" size="lg">
               Salvar minhas fotos agora
             </Button>

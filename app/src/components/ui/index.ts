@@ -3,3 +3,4 @@ export { Input } from "./Input";
 export { Card } from "./Card";
 export { Modal } from "./Modal";
 export { AnimatedSection } from "./AnimatedSection";
+export { EmailGateModal } from "./EmailGateModal";

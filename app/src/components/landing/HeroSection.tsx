@@ -63,7 +63,7 @@ export function HeroSection() {
               )}
               style={{ animationDelay: textVisible ? "200ms" : "0ms" }}
             >
-              <Link href="/start" className="inline-block w-full sm:w-auto" onClick={handleCtaClick}>
+              <Link href="/try" className="inline-block w-full sm:w-auto" onClick={handleCtaClick}>
                 <Button size="lg" className="w-full sm:w-auto gap-2">
                   Quero ver minha foto restaurada
                   <ArrowRight className="h-5 w-5" />

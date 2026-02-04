@@ -76,7 +76,7 @@ export function GenealogySection() {
               )}
               style={{ animationDelay: textVisible ? "400ms" : "0ms" }}
             >
-              <Link href="/start">
+              <Link href="/try">
                 <Button variant="secondary" size="lg">
                   Começar a restaurar
                 </Button>

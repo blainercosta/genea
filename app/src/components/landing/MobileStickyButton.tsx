@@ -40,7 +40,7 @@ export function MobileStickyButton() {
         shouldShow ? "translate-y-0" : "translate-y-full"
       )}
     >
-      <Link href="/start" className="block" onClick={() => analytics.ctaClick("mobile_sticky")}>
+      <Link href="/try" className="block" onClick={() => analytics.ctaClick("mobile_sticky")}>
         <Button size="lg" className="w-full shadow-lg">
           Testar Grátis
         </Button>

@@ -40,6 +40,13 @@ export function initUser(email: string): User {
     return existing;
   }
 
+  // If user exists but with different email (or anonymous), update email
+  if (existing) {
+    existing.email = email;
+    saveUser(existing);
+    return existing;
+  }
+
   const newUser: User = {
     email,
     credits: 0,
@@ -49,6 +56,37 @@ export function initUser(email: string): User {
 
   saveUser(newUser);
   return newUser;
+}
+
+/**
+ * Initialize anonymous user for trial flow (no email required)
+ * Returns existing user if one exists, otherwise creates anonymous user
+ */
+export function initAnonymousUser(): User {
+  const existing = getUser();
+  if (existing) return existing;
+
+  const newUser: User = {
+    email: "", // Empty email = anonymous
+    credits: 0,
+    isTrialUsed: false,
+    restorations: [],
+  };
+
+  saveUser(newUser);
+  return newUser;
+}
+
+/**
+ * Set email for existing user (used when anonymous user provides email)
+ */
+export function setUserEmail(email: string): User | null {
+  const user = getUser();
+  if (!user) return null;
+
+  user.email = email;
+  saveUser(user);
+  return user;
 }
 
 /**

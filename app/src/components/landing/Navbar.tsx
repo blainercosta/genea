@@ -65,7 +65,7 @@ export function Navbar() {
           <Link href="/login">
             <Button size="sm" variant="secondary">Entrar</Button>
           </Link>
-          <Link href="/start">
+          <Link href="/try">
             <Button size="sm">Testar Grátis</Button>
           </Link>
         </div>
@@ -75,7 +75,7 @@ export function Navbar() {
           <Link href="/login">
             <Button size="sm" variant="secondary">Entrar</Button>
           </Link>
-          <Link href="/start">
+          <Link href="/try">
             <Button size="sm">Testar</Button>
           </Link>
         </div>

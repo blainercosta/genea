@@ -55,7 +55,7 @@ export function FinalCTASection() {
           )}
           style={{ animationDelay: contentVisible ? "200ms" : "0ms" }}
         >
-          <Link href="/start" onClick={handleCtaClick}>
+          <Link href="/try" onClick={handleCtaClick}>
             <Button
               size="lg"
               className="bg-genea-amber text-white hover:bg-genea-amber/90 gap-2 transition-transform duration-300 hover:scale-105"

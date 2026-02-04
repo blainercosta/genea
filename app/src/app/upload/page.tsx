@@ -9,7 +9,7 @@ import { analytics } from "@/lib/analytics";
 export default function UploadPage() {
   const router = useRouter();
   const [mounted, setMounted] = useState(false);
-  const { user, isTrial, credits, consumeCredit, canRestore, createRestoration } = useUser();
+  const { user, isTrial, credits, consumeCredit, canRestore, createRestoration, initAnonymous } = useUser();
 
   // Check if this is paid flow (has credits) or trial
   const isPaid = mounted ? !isTrial() : false;
@@ -69,6 +69,11 @@ export default function UploadPage() {
       analytics.upgradeClick("upload");
       router.push("/checkout");
       return;
+    }
+
+    // Initialize anonymous user if no user exists (trial flow without email)
+    if (!user) {
+      initAnonymous();
     }
 
     // Consume credit BEFORE starting upload to prevent race condition

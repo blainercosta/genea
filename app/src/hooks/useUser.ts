@@ -6,6 +6,8 @@ import {
   getUser,
   saveUser,
   initUser,
+  initAnonymousUser,
+  setUserEmail,
   addCredits,
   consumeCredit as consumeCreditFromStorage,
   canRestore,
@@ -201,6 +203,59 @@ export function useUser() {
     return { user: newUser, isNewUser: true };
   }, []);
 
+  // Initialize anonymous user for trial (no email required)
+  const initAnonymous = useCallback(() => {
+    const anonUser = initAnonymousUser();
+    setUser(anonUser);
+    return anonUser;
+  }, []);
+
+  // Set email for anonymous user (called when they want to download)
+  // Returns { user, isNewUser } after syncing with Supabase
+  const setEmail = useCallback(async (email: string): Promise<{ user: User; isNewUser: boolean }> => {
+    // Update local user with email
+    const updatedUser = setUserEmail(email);
+    if (!updatedUser) {
+      // No user exists, create new one
+      return initialize(email);
+    }
+
+    setUser(updatedUser);
+
+    // Sync with Supabase
+    const supabaseData = await syncFromSupabase(email);
+
+    if (supabaseData) {
+      // Merge restorations (keep local trial restoration)
+      const mergedRestorations = mergeRestorations(
+        supabaseData.restorations || [],
+        updatedUser.restorations || []
+      );
+
+      const syncedUser: User = {
+        ...updatedUser,
+        credits: supabaseData.credits,
+        // Keep local isTrialUsed if already used (anonymous trial)
+        isTrialUsed: updatedUser.isTrialUsed || supabaseData.isTrialUsed,
+        name: supabaseData.name || updatedUser.name,
+        phone: supabaseData.phone || updatedUser.phone,
+        taxId: supabaseData.taxId || updatedUser.taxId,
+        restorations: mergedRestorations,
+      };
+      saveUser(syncedUser);
+      setUser(syncedUser);
+      return { user: syncedUser, isNewUser: false };
+    }
+
+    return { user: updatedUser, isNewUser: true };
+  }, [initialize]);
+
+  // Check if user is anonymous (has no email)
+  const isAnonymous = useCallback(() => {
+    const currentUser = getUser();
+    return !currentUser?.email;
+  }, []);
+
   // Add credits to user
   const addUserCredits = useCallback((amount: number) => {
     const updated = addCredits(amount);
@@ -363,6 +418,9 @@ export function useUser() {
     isSyncing,
     credits,
     initialize,
+    initAnonymous,
+    setEmail,
+    isAnonymous,
     addCredits: addUserCredits,
     consumeCredit,
     canRestore: checkCanRestore,
