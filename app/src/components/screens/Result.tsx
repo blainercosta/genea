@@ -61,7 +61,8 @@ export function Result({
       if (!containerRef.current) return;
       const rect = containerRef.current.getBoundingClientRect();
       const x = clientX - rect.left;
-      const percentage = Math.max(0, Math.min(100, (x / rect.width) * 100));
+      // Limit slider movement to 30-70% range (30% from each edge)
+      const percentage = Math.max(30, Math.min(70, (x / rect.width) * 100));
       setSliderPosition(percentage);
     },
     []
@@ -168,7 +169,7 @@ export function Result({
 
             {/* Hint text */}
             <p className="text-center text-xs text-ih-text-muted mt-2">
-              Arraste para comparar
+              ← Deslize para comparar →
             </p>
           </div>
 
@@ -215,41 +216,36 @@ export function Result({
               </>
             ) : (
               <>
-                {/* Primary CTA: Unlock this photo */}
-                <Button
-                  size="lg"
-                  onClick={onUnlockThisPhoto}
-                  className="w-full h-14 text-base bg-genea-green hover:bg-genea-green/90 border-genea-green text-white font-semibold shadow-lg"
-                >
-                  <Download className="w-5 h-5 mr-2" />
-                  Baixar minha foto por R$ 9,90
-                </Button>
-
-                {/* Secondary CTA: Get more photos */}
-                <Button
-                  variant="secondary"
-                  onClick={onGetMorePhotos}
-                  className="w-full h-12"
-                >
-                  Ver pacotes (até 40% off)
-                </Button>
-
-                <div className="flex items-center justify-center gap-4 text-xs text-ih-text-muted">
-                  <span>Pagamento único</span>
-                  <span>•</span>
-                  <span>Alta qualidade</span>
-                  <span>•</span>
-                  <span>Ajustes ilimitados</span>
+                {/* Primary CTA: Save restored photo */}
+                <div className="flex flex-col items-center gap-1.5">
+                  <Button
+                    size="lg"
+                    onClick={onUnlockThisPhoto}
+                    className="w-full h-14 text-base bg-genea-green hover:bg-genea-green/90 border-genea-green text-white font-semibold shadow-lg"
+                  >
+                    <Download className="w-5 h-5 mr-2" />
+                    Salvar foto restaurada
+                  </Button>
+                  <span className="text-xs text-ih-text-muted">
+                    R$ 9,90 · Pagamento único · Ajustes ilimitados
+                  </span>
                 </div>
 
-                <Button
-                  variant="secondary"
-                  onClick={onDownload}
-                  className="w-full gap-2 h-11 text-ih-text-muted"
-                >
-                  <Download className="w-4 h-4" />
-                  Baixar preview
-                </Button>
+                {/* Text links */}
+                <div className="flex flex-col items-center gap-3 pt-2">
+                  <button
+                    onClick={onGetMorePhotos}
+                    className="text-sm text-genea-amber hover:text-genea-amber/80 transition-colors font-medium"
+                  >
+                    Tem mais fotos? Veja pacotes com desconto
+                  </button>
+                  <button
+                    onClick={onDownload}
+                    className="text-xs text-ih-text-muted hover:text-ih-text-secondary transition-colors"
+                  >
+                    Baixar amostra com marca d&apos;água
+                  </button>
+                </div>
               </>
             )}
           </div>
